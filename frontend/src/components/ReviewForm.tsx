@@ -82,8 +82,14 @@ export default function ReviewForm({ instructors, onSubmit }: Props) {
       await onSubmit({
         instructor_id: instructorId,
         layer_ratings: Object.entries(layerRatings).map(([l, r]) => ({ layer: Number(l), rating: r })),
-        ...textFields,
-        ...selectFields,
+        period: textFields.period,
+        before_connection: textFields.before_connection,
+        after_connection: textFields.after_connection,
+        usage_feel: textFields.usage_feel,
+        explanation_quality: selectFields.explanation_quality,
+        problem_volume: selectFields.problem_volume,
+        target_deviation: selectFields.target_deviation,
+        completion_period: selectFields.completion_period,
         strengthens_weaknesses: strengthens,
         self_study_suitability: selfStudy,
       })

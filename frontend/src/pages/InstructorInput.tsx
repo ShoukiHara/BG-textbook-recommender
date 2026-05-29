@@ -16,7 +16,7 @@ export default function InstructorInput() {
   const [selectedBookId, setSelectedBookId] = useState(presetBookId ?? '')
 
   // 参考書登録タブ
-  const [regSubject, setRegSubject] = useState(SUBJECTS[0])
+  const [regSubject, setRegSubject] = useState<string>(SUBJECTS[0])
   const [regTitle, setRegTitle] = useState('')
   const [regError, setRegError] = useState<string | null>(null)
   const [regSuccess, setRegSuccess] = useState<string | null>(null)
