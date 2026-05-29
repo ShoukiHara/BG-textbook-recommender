@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+
+# 環境変数（絶対コミットしない）
+.env
+.env.local
+
+# Node
+node_modules/
+dist/
+.DS_Store
+
+# その他
+*.xlsx
+check_excel.py

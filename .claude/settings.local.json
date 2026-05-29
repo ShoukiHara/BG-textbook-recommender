@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv\\\\Scripts\\\\pip install *)",
+      "Bash(.venv/Scripts/pip install *)",
+      "Bash(.venv/Scripts/python -m alembic heads)",
+      "Bash(.venv/Scripts/python -m alembic stamp 001)",
+      "Bash(.venv/Scripts/python -m alembic current)",
+      "Bash(.venv/Scripts/python -m alembic upgrade head)",
+      "Bash(.venv/Scripts/python -c ' *)",
+      "Bash(.venv/Scripts/python scripts/migrate_from_excel.py --excel ../streamlit_db.xlsx --dry-run)",
+      "Bash(.venv/Scripts/python scripts/migrate_from_excel.py --excel ../streamlit_db.xlsx)",
+      "Bash(ipconfig)",
+      "Bash(.venv/Scripts/python -c \"import anthropic; print\\('OK', anthropic.__version__\\)\")",
+      "Bash(git --version)",
+      "Bash(gh --version)",
+      "Bash(winget install *)",
+      "Bash(python -c ' *)",
+      "Bash(backend.venvScriptspython.exe -c ' *)"
+    ]
+  }
+}
