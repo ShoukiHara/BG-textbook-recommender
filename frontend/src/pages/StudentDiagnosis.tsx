@@ -116,8 +116,8 @@ export default function StudentDiagnosis() {
 
   // 手動タブ用ランキング
   const { data: ranking = [], isFetching: rankingLoading } = useQuery({
-    queryKey: ['ranking', manualSubject, manualLayer],
-    queryFn: () => fetchRanking(manualSubject, manualLayer),
+    queryKey: ['ranking', manualSubject, manualLayer, manualCategory],
+    queryFn: () => fetchRanking(manualSubject, manualLayer, manualCategory),
     enabled: tab === 'manual',
     staleTime: 10 * 60 * 1000,
   })
@@ -551,16 +551,7 @@ export default function StudentDiagnosis() {
           {rankingLoading ? (
             <p className="text-gray-500 text-center py-4">読み込み中...</p>
           ) : (
-            <BookCardList
-              items={(ranking as RankingItem[]).filter(item => {
-                if (!manualCategory) return true
-                const cat = getSubjectCategory(manualSubject)
-                if (cat === 'english') return item.english_category.split(',').map(s => s.trim()).includes(manualCategory)
-                if (cat === 'math') return item.math_category.split(',').map(s => s.trim()).includes(manualCategory)
-                if (cat === 'science') return item.science_category.split(',').map(s => s.trim()).includes(manualCategory)
-                return true
-              })}
-            />
+            <BookCardList items={ranking as RankingItem[]} />
           )}
         </div>
       )}

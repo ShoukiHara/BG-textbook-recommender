@@ -58,55 +58,102 @@ def compute_review_summary(reviews: Sequence[Review]) -> dict:
     }
 
 
-def calculate_ranking(reviews: Sequence[Review], book_map: dict) -> list[dict]:
+SUBJECT_CATEGORY_FIELD = {
+    "英語":     "english_category",
+    "文系数学": "math_category",
+    "理系数学": "math_category",
+    "物理":     "science_category",
+    "化学":     "science_category",
+    "生物":     "science_category",
+}
+
+MAX_VARIANCE = 6.25  # 評価0〜5のスケールでの最大分散
+
+
+def _most_common(vals: list[str]) -> str:
+    filtered = [v for v in vals if v]
+    return max(set(filtered), key=filtered.count) if filtered else ""
+
+
+def calculate_ranking(
+    reviews: Sequence[Review],
+    book_map: dict,
+    subject: str = "",
+    category: str = "",
+) -> list[dict]:
     instructor_review_counts: dict[str, int] = defaultdict(int)
     for r in reviews:
         key = str(r.instructor_id) if r.instructor_id else "__anon__"
         instructor_review_counts[key] += 1
 
-    book_scores: dict[str, dict] = defaultdict(lambda: {"weighted_sum": 0.0, "weight_sum": 0.0, "count": 0, "rating_sum": 0, "english_categories": [], "math_categories": [], "science_categories": []})
+    category_field = SUBJECT_CATEGORY_FIELD.get(subject, "")
+
+    book_data: dict[str, dict] = defaultdict(lambda: {
+        "weighted_sum": 0.0, "weight_sum": 0.0,
+        "ratings": [],
+        "english_categories": [], "math_categories": [], "science_categories": [],
+        "category_match_count": 0, "total_count": 0,
+    })
 
     for r in reviews:
         key = str(r.instructor_id) if r.instructor_id else "__anon__"
         weight = math.log10(instructor_review_counts[key] + 10)
         bid = str(r.book_id)
-        book_scores[bid]["weighted_sum"] += r.rating * weight
-        book_scores[bid]["weight_sum"] += weight
-        book_scores[bid]["count"] += 1
-        book_scores[bid]["rating_sum"] += r.rating
-        for cat in r.english_category.split(',') if r.english_category else []:
-            book_scores[bid]["english_categories"].append(cat.strip())
-        for cat in r.math_category.split(',') if r.math_category else []:
-            book_scores[bid]["math_categories"].append(cat.strip())
-        for cat in r.science_category.split(',') if r.science_category else []:
-            book_scores[bid]["science_categories"].append(cat.strip())
+        d = book_data[bid]
+        d["weighted_sum"] += r.rating * weight
+        d["weight_sum"] += weight
+        d["ratings"].append(r.rating)
+        d["total_count"] += 1
+
+        for cat in (r.english_category.split(',') if r.english_category else []):
+            d["english_categories"].append(cat.strip())
+        for cat in (r.math_category.split(',') if r.math_category else []):
+            d["math_categories"].append(cat.strip())
+        for cat in (r.science_category.split(',') if r.science_category else []):
+            d["science_categories"].append(cat.strip())
+
+        # カテゴリ一致カウント
+        if category and category_field:
+            stored = getattr(r, category_field, "") or ""
+            cats = [c.strip() for c in stored.split(',') if c.strip()]
+            if category in cats:
+                d["category_match_count"] += 1
 
     results = []
-    for bid, data in book_scores.items():
-        if data["weight_sum"] == 0 or data["count"] == 0:
+    for bid, d in book_data.items():
+        if d["weight_sum"] == 0 or d["total_count"] == 0:
             continue
-        score = data["weighted_sum"] / data["weight_sum"]
-        avg_rating = data["rating_sum"] / data["count"]
-        # 最頻のenglish_categoryを代表値として使用
-        ecats = data["english_categories"]
-        english_category = max(set(ecats), key=ecats.count) if ecats else ""
-        mcats = data["math_categories"]
-        math_category = max(set(mcats), key=mcats.count) if mcats else ""
-        scats = data["science_categories"]
-        science_category = max(set(scats), key=scats.count) if scats else ""
+
+        # --- 品質スコア（重み付き平均 × 分散ペナルティ） ---
+        weighted_avg = d["weighted_sum"] / d["weight_sum"]
+        ratings = d["ratings"]
+        avg_unweighted = sum(ratings) / len(ratings)
+        variance = sum((r - avg_unweighted) ** 2 for r in ratings) / len(ratings)
+        quality_score = weighted_avg * (1 - 0.5 * variance / MAX_VARIANCE)
+
+        # --- カテゴリ一致スコア（0〜5スケール） ---
+        if category and d["total_count"] > 0:
+            match_ratio = d["category_match_count"] / d["total_count"]
+            category_score = match_ratio * 5.0
+            final_score = 0.6 * quality_score + 0.4 * category_score
+        else:
+            final_score = quality_score
+
+        ecats = d["english_categories"]
+        mcats = d["math_categories"]
+        scats = d["science_categories"]
         book = book_map.get(bid)
         if book:
             results.append({
                 "book_id": bid,
                 "title": book.title,
-                "score": round(score, 4),
-                "avg_rating": round(avg_rating, 2),
-                "review_count": data["count"],
-                "english_category": english_category,
-                "math_category": math_category,
-                "science_category": science_category,
+                "score": round(final_score, 4),
+                "avg_rating": round(avg_unweighted, 2),
+                "review_count": d["total_count"],
+                "english_category": _most_common(ecats),
+                "math_category": _most_common(mcats),
+                "science_category": _most_common(scats),
             })
 
     results.sort(key=lambda x: x["score"], reverse=True)
-
     return [{"rank": i + 1, **item} for i, item in enumerate(results[:10])]

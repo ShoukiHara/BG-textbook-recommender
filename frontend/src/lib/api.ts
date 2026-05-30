@@ -156,8 +156,8 @@ export const deleteInstructor = (id: string, token: string) =>
     headers: { Authorization: `Bearer ${token}` },
   })
 
-export const fetchRanking = (subject: string, layer: number) =>
-  apiClient.get<RankingItem[]>('/api/v1/ranking', { params: { subject, layer } }).then(r => r.data)
+export const fetchRanking = (subject: string, layer: number, category = '') =>
+  apiClient.get<RankingItem[]>('/api/v1/ranking', { params: { subject, layer, category: category || undefined } }).then(r => r.data)
 
 export const diagnose = (data: DiagnoseRequest) =>
   apiClient.post<DiagnoseResponse>('/api/v1/ai/diagnose', data).then(r => r.data)

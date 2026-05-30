@@ -13,6 +13,7 @@ router = APIRouter(tags=["ranking"])
 async def get_ranking(
     subject: str = Query(...),
     layer: int = Query(...),
+    category: str = Query(""),
     db: AsyncSession = Depends(get_db),
 ):
     if layer not in LAYERS:
@@ -31,4 +32,4 @@ async def get_ranking(
     reviews = reviews_result.scalars().all()
 
     book_map = {str(b.id): b for b in books}
-    return calculate_ranking(reviews, book_map)
+    return calculate_ranking(reviews, book_map, subject=subject, category=category)
