@@ -43,6 +43,25 @@ class ReviewCreate(BaseModel):
     science_category: str = ""
 
 
+class AdminReviewCreate(BaseModel):
+    book_id: UUID4
+    instructor_id: UUID4 | None = None
+    layer_ratings: list[LayerRating]
+    period: str = ""
+    before_connection: str = ""
+    after_connection: str = ""
+    usage_feel: str = ""
+    explanation_quality: str = ""
+    problem_volume: str = ""
+    strengthens_weaknesses: str = ""
+    target_deviation: str = ""
+    completion_period: str = ""
+    self_study_suitability: str = ""
+    english_category: str = ""
+    math_category: str = ""
+    science_category: str = ""
+
+
 class ReviewUpdate(BaseModel):
     layer: int | None = None
     rating: int | None = None

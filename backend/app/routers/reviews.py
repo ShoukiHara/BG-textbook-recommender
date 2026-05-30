@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, literal
 from app.database import get_db
 from app.models import Book, Review, Instructor
-from app.schemas import ReviewCreate, ReviewUpdate, ReviewOut
+from app.schemas import ReviewCreate, AdminReviewCreate, ReviewUpdate, ReviewOut
 from app.routers.auth import require_admin
 from app.logic import compute_review_summary
 
@@ -174,3 +174,31 @@ async def delete_review(
     if book:
         await _invalidate_book_caches(db, book)
     await db.commit()
+
+
+@router.post("/admin/reviews", response_model=list[ReviewOut], status_code=201)
+async def admin_create_reviews(
+    body: AdminReviewCreate,
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_admin),
+):
+    book = await db.get(Book, body.book_id)
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+    if body.instructor_id and not await db.get(Instructor, body.instructor_id):
+        raise HTTPException(status_code=404, detail="Instructor not found")
+    if not body.layer_ratings:
+        raise HTTPException(status_code=422, detail="layer_ratings must not be empty")
+
+    shared = body.model_dump(exclude={"book_id", "layer_ratings"})
+    created_ids = []
+    for lr in body.layer_ratings:
+        review = Review(book_id=body.book_id, layer=lr.layer, rating=lr.rating, **shared)
+        db.add(review)
+        created_ids.append(review.id)
+
+    await _invalidate_book_caches(db, book)
+    await db.commit()
+
+    all_reviews = await _get_reviews_with_names(db, body.book_id)
+    return [r for r in all_reviews if r.id in created_ids]

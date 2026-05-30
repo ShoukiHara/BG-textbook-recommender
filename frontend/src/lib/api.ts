@@ -121,6 +121,28 @@ export const createReview = (bookId: string, data: {
   science_category: string
 }) => apiClient.post<Review[]>(`/api/v1/books/${bookId}/reviews`, data).then(r => r.data)
 
+export const adminCreateReviews = (data: {
+  book_id: string
+  instructor_id: string | null
+  layer_ratings: Array<{ layer: number; rating: number }>
+  period: string
+  before_connection: string
+  after_connection: string
+  usage_feel: string
+  explanation_quality: string
+  problem_volume: string
+  strengthens_weaknesses: string
+  target_deviation: string
+  completion_period: string
+  self_study_suitability: string
+  english_category: string
+  math_category: string
+  science_category: string
+}, token: string) =>
+  apiClient.post<Review[]>('/api/v1/admin/reviews', data, {
+    headers: { Authorization: `Bearer ${token}` },
+  }).then(r => r.data)
+
 export const updateReview = (reviewId: string, data: Partial<{
   layer: number
   rating: number

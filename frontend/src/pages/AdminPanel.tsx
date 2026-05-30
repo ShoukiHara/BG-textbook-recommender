@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   fetchReviewsFiltered, fetchBooks, fetchInstructors,
-  updateReview, deleteReview, createReview, createInstructor, updateInstructor, deleteInstructor,
+  updateReview, deleteReview, adminCreateReviews, createInstructor, updateInstructor, deleteInstructor,
   login, generateAllGuides, fetchAIFeedbackList, fetchAIFeedbackSummary,
 } from '../lib/api'
 import { LAYERS, SUBJECTS, ENGLISH_CATEGORIES, MATH_CATEGORIES, MATH_SUBJECTS, SCIENCE_CATEGORIES, SCIENCE_SUBJECTS } from '../lib/constants'
@@ -357,14 +357,13 @@ function ReviewManager({ token }: { token: string }) {
         ...editFields,
       }, token)
 
-      for (const [l, rt] of additionalEntries) {
-        const url = `/api/v1/books/${r.book_id}/reviews`
-        setSaveError(`DEBUG POST: url=${url}, instructor_id=${r.instructor_id}, layer=${l}`)
-        await createReview(r.book_id, {
-          instructor_id: r.instructor_id ?? '',
-          layer_ratings: [{ layer: Number(l), rating: Number(rt) }],
+      if (additionalEntries.length > 0) {
+        await adminCreateReviews({
+          book_id: r.book_id,
+          instructor_id: r.instructor_id,
+          layer_ratings: additionalEntries.map(([l, rt]) => ({ layer: Number(l), rating: Number(rt) })),
           ...editFields,
-        })
+        }, token)
       }
 
       await qc.invalidateQueries({ queryKey: ['reviews-filtered'] })
