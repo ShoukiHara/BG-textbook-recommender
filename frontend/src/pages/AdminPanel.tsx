@@ -349,19 +349,20 @@ function ReviewManager({ token }: { token: string }) {
   const handleSave = async (r: Review) => {
     const layers = Object.entries(editLayerRatings)
     if (layers.length === 0) return
-    // 現在のレコードを最初のレイヤーで更新
-    const [[firstLayer, firstRating], ...rest] = layers
-    await updateReview(r.id, { layer: Number(firstLayer), rating: firstRating, ...editFields }, token)
-    // 追加レイヤーは新規レコードとして作成（instructor_id がある場合のみ）
-    if (rest.length > 0 && r.instructor_id) {
-      await createReview(r.book_id, {
-        instructor_id: r.instructor_id,
-        layer_ratings: rest.map(([l, rt]) => ({ layer: Number(l), rating: rt })),
-        ...editFields,
-      })
+    try {
+      const [[firstLayer, firstRating], ...rest] = layers
+      await updateReview(r.id, { layer: Number(firstLayer), rating: firstRating, ...editFields }, token)
+      if (rest.length > 0 && r.instructor_id) {
+        await createReview(r.book_id, {
+          instructor_id: r.instructor_id,
+          layer_ratings: rest.map(([l, rt]) => ({ layer: Number(l), rating: Number(rt) })),
+          ...editFields,
+        })
+      }
+      await qc.invalidateQueries({ queryKey: ['reviews-filtered'] })
+    } finally {
+      setEditingId(null)
     }
-    qc.invalidateQueries({ queryKey: ['reviews-filtered'] })
-    setEditingId(null)
   }
 
   return (
