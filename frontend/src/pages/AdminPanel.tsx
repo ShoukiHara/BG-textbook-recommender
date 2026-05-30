@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  fetchReviews, fetchBooks, fetchInstructors,
+  fetchReviews, fetchReviewsByInstructor, fetchBooks, fetchInstructors,
   updateReview, deleteReview, createInstructor, updateInstructor, deleteInstructor,
   login, generateAllGuides, fetchAIFeedbackList, fetchAIFeedbackSummary,
 } from '../lib/api'
@@ -155,8 +155,11 @@ function ReviewCard({ review, onEdit, onDelete }: {
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="font-medium text-sm">{review.instructor_name}</span>
+          {review.book_title && (
+            <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">{review.book_title}</span>
+          )}
           <span className="text-xs bg-gray-100 px-2 py-0.5 rounded">{LAYERS[review.layer]}</span>
           <StarRating value={review.rating} readOnly />
         </div>
@@ -201,14 +204,29 @@ function ReviewManager({ token }: { token: string }) {
   const { data: books = [] } = useQuery({
     queryKey: ['books'], queryFn: () => fetchBooks(), staleTime: 5 * 60 * 1000,
   })
+  const { data: instructors = [] } = useQuery({
+    queryKey: ['instructors'], queryFn: fetchInstructors, staleTime: 5 * 60 * 1000,
+  })
 
+  const [filterMode, setFilterMode] = useState<'book' | 'instructor'>('book')
   const [selectedBookId, setSelectedBookId] = useState('')
-  const { data: reviews = [], isLoading } = useQuery({
+  const [selectedInstructorId, setSelectedInstructorId] = useState('')
+
+  const { data: reviewsByBook = [], isLoading: loadingByBook } = useQuery({
     queryKey: ['reviews', selectedBookId],
     queryFn: () => fetchReviews(selectedBookId),
-    enabled: !!selectedBookId,
+    enabled: filterMode === 'book' && !!selectedBookId,
     staleTime: 0,
   })
+  const { data: reviewsByInstructor = [], isLoading: loadingByInstructor } = useQuery({
+    queryKey: ['reviews-by-instructor', selectedInstructorId],
+    queryFn: () => fetchReviewsByInstructor(selectedInstructorId, token),
+    enabled: filterMode === 'instructor' && !!selectedInstructorId,
+    staleTime: 0,
+  })
+
+  const reviews = filterMode === 'book' ? reviewsByBook : reviewsByInstructor
+  const isLoading = filterMode === 'book' ? loadingByBook : loadingByInstructor
 
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editLayer, setEditLayer] = useState(1)
@@ -242,18 +260,46 @@ function ReviewManager({ token }: { token: string }) {
   return (
     <section className="mb-10">
       <h2 className="text-lg font-semibold text-gray-800 mb-4">レビュー管理</h2>
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-1">参考書を選択</label>
-        <select
-          value={selectedBookId}
-          onChange={e => { setSelectedBookId(e.target.value); setEditingId(null) }}
-          className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full max-w-xs"
-        >
-          <option value="">-- 選択してください --</option>
-          {(books as Book[]).map(b => (
-            <option key={b.id} value={b.id}>{b.title}（{b.subject}）</option>
+      <div className="mb-4 space-y-3">
+        <div className="flex gap-2">
+          {(['book', 'instructor'] as const).map(mode => (
+            <button
+              key={mode}
+              onClick={() => { setFilterMode(mode); setEditingId(null) }}
+              className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                filterMode === mode
+                  ? 'bg-blue-600 text-white'
+                  : 'border border-gray-300 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              {mode === 'book' ? '参考書で絞り込む' : '講師で絞り込む'}
+            </button>
           ))}
-        </select>
+        </div>
+
+        {filterMode === 'book' ? (
+          <select
+            value={selectedBookId}
+            onChange={e => { setSelectedBookId(e.target.value); setEditingId(null) }}
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full max-w-xs"
+          >
+            <option value="">-- 参考書を選択 --</option>
+            {(books as Book[]).map(b => (
+              <option key={b.id} value={b.id}>{b.title}（{b.subject}）</option>
+            ))}
+          </select>
+        ) : (
+          <select
+            value={selectedInstructorId}
+            onChange={e => { setSelectedInstructorId(e.target.value); setEditingId(null) }}
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full max-w-xs"
+          >
+            <option value="">-- 講師を選択 --</option>
+            {(instructors as Instructor[]).map(i => (
+              <option key={i.id} value={i.id}>{i.name}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {isLoading && <p className="text-gray-500 text-sm">読み込み中...</p>}

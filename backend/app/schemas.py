@@ -60,6 +60,7 @@ class ReviewUpdate(BaseModel):
 class ReviewOut(BaseModel):
     id: UUID4
     instructor_name: str
+    book_title: str = ""
     layer: int
     rating: int
     period: str

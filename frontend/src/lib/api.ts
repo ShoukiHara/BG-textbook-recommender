@@ -16,6 +16,7 @@ export interface Book {
 export interface Review {
   id: string
   instructor_name: string
+  book_title: string
   layer: number
   rating: number
   period: string
@@ -84,6 +85,11 @@ export const createBook = (data: { title: string; subject: string }) =>
 
 export const fetchReviews = (bookId: string) =>
   apiClient.get<Review[]>(`/api/v1/books/${bookId}/reviews`).then(r => r.data)
+
+export const fetchReviewsByInstructor = (instructorId: string, token: string) =>
+  apiClient.get<Review[]>(`/api/v1/instructors/${instructorId}/reviews`, {
+    headers: { Authorization: `Bearer ${token}` },
+  }).then(r => r.data)
 
 export const createReview = (bookId: string, data: {
   instructor_id: string

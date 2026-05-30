@@ -35,6 +35,7 @@ async def _get_reviews_with_names(db: AsyncSession, book_id: UUID) -> list[Revie
             target_deviation=row.Review.target_deviation,
             completion_period=row.Review.completion_period,
             self_study_suitability=row.Review.self_study_suitability,
+            english_category=row.Review.english_category,
             created_at=row.Review.created_at,
         )
         for row in rows
@@ -53,6 +54,44 @@ async def list_reviews(book_id: UUID, db: AsyncSession = Depends(get_db)):
     if not await db.get(Book, book_id):
         raise HTTPException(status_code=404, detail="Book not found")
     return await _get_reviews_with_names(db, book_id)
+
+
+@router.get("/instructors/{instructor_id}/reviews", response_model=list[ReviewOut])
+async def list_reviews_by_instructor(
+    instructor_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_admin),
+):
+    stmt = (
+        select(Review, func.coalesce(Instructor.name, literal("匿名")).label("instructor_name"), Book.title.label("book_title"))
+        .outerjoin(Instructor, Review.instructor_id == Instructor.id)
+        .join(Book, Review.book_id == Book.id)
+        .where(Review.instructor_id == instructor_id)
+        .order_by(Review.created_at.desc())
+    )
+    rows = (await db.execute(stmt)).all()
+    return [
+        ReviewOut(
+            id=row.Review.id,
+            instructor_name=row.instructor_name,
+            book_title=row.book_title,
+            layer=row.Review.layer,
+            rating=row.Review.rating,
+            period=row.Review.period,
+            before_connection=row.Review.before_connection,
+            after_connection=row.Review.after_connection,
+            usage_feel=row.Review.usage_feel,
+            explanation_quality=row.Review.explanation_quality,
+            problem_volume=row.Review.problem_volume,
+            strengthens_weaknesses=row.Review.strengthens_weaknesses,
+            target_deviation=row.Review.target_deviation,
+            completion_period=row.Review.completion_period,
+            self_study_suitability=row.Review.self_study_suitability,
+            english_category=row.Review.english_category,
+            created_at=row.Review.created_at,
+        )
+        for row in rows
+    ]
 
 
 @router.post("/books/{book_id}/reviews", response_model=list[ReviewOut], status_code=201)
