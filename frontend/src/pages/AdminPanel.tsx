@@ -53,7 +53,7 @@ const TEXT_FIELDS = [
 // ----------------------------------------------------------------
 
 function ReviewEditForm({
-  reviewId, subject, layerRatings, fields,
+  reviewId, subject, layerRatings, fields, saveError,
   onLayerToggle, onRatingChange, onFieldChange, onSave, onCancel,
 }: {
   reviewId: string
@@ -63,6 +63,7 @@ function ReviewEditForm({
   onRatingChange: (layer: number, rating: number) => void
   onFieldChange: (key: keyof EditFields, value: string) => void
   fields: EditFields
+  saveError: string | null
   onSave: () => void; onCancel: () => void
 }) {
   const toggleCategory = (
@@ -215,6 +216,10 @@ function ReviewEditForm({
         </div>
       ))}
 
+      {saveError && (
+        <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1">{saveError}</p>
+      )}
+
       <div className="flex gap-2">
         <button onClick={onSave} className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700">保存</button>
         <button onClick={onCancel} className="text-sm border px-3 py-1.5 rounded">キャンセル</button>
@@ -316,6 +321,7 @@ function ReviewManager({ token }: { token: string }) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editLayerRatings, setEditLayerRatings] = useState<Record<number, number>>({})
   const [editFields, setEditFields] = useState<EditFields>(EMPTY_EDIT_FIELDS)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteReview(id, token),
@@ -324,6 +330,7 @@ function ReviewManager({ token }: { token: string }) {
 
   const startEdit = (r: Review) => {
     setEditingId(r.id)
+    setSaveError(null)
     setEditLayerRatings({ [r.layer]: r.rating })
     setEditFields({
       period: r.period, before_connection: r.before_connection,
@@ -338,8 +345,8 @@ function ReviewManager({ token }: { token: string }) {
   const handleSave = async (r: Review) => {
     const entries = Object.entries(editLayerRatings)
     if (entries.length === 0) return
+    setSaveError(null)
     try {
-      // 元のレコードのレイヤーが引き続き選択されていればそのまま更新、そうでなければ最初の選択を使う
       const originalEntry = entries.find(([l]) => Number(l) === r.layer)
       const [primaryLayer, primaryRating] = originalEntry ?? entries[0]
       const additionalEntries = entries.filter(([l]) => Number(l) !== Number(primaryLayer))
@@ -350,16 +357,24 @@ function ReviewManager({ token }: { token: string }) {
         ...editFields,
       }, token)
 
-      if (additionalEntries.length > 0 && r.instructor_id) {
-        await createReview(r.book_id, {
-          instructor_id: r.instructor_id,
-          layer_ratings: additionalEntries.map(([l, rt]) => ({ layer: Number(l), rating: Number(rt) })),
-          ...editFields,
-        })
+      if (additionalEntries.length > 0) {
+        if (!r.instructor_id) {
+          setSaveError('講師が匿名のため、追加レイヤーを保存できません（レイヤー1件のみ保存）')
+        } else {
+          await createReview(r.book_id, {
+            instructor_id: r.instructor_id,
+            layer_ratings: additionalEntries.map(([l, rt]) => ({ layer: Number(l), rating: Number(rt) })),
+            ...editFields,
+          })
+        }
       }
-    } finally {
+
       await qc.invalidateQueries({ queryKey: ['reviews-filtered'] })
       setEditingId(null)
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setSaveError(`保存エラー: ${msg}`)
+      await qc.invalidateQueries({ queryKey: ['reviews-filtered'] })
     }
   }
 
@@ -427,6 +442,7 @@ function ReviewManager({ token }: { token: string }) {
                   subject={r.subject}
                   layerRatings={editLayerRatings}
                   fields={editFields}
+                  saveError={saveError}
                   onLayerToggle={(layer, checked) =>
                     setEditLayerRatings(prev => {
                       const next = { ...prev }
