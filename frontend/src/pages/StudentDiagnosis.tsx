@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { diagnose, fetchRanking } from '../lib/api'
 import BookCardList from '../components/BookCardList'
 import DiagnosisFeedbackForm from '../components/DiagnosisFeedbackForm'
-import { SUBJECTS, LAYERS, GRADES } from '../lib/constants'
+import { SUBJECTS, LAYERS, GRADES, ENGLISH_CATEGORIES, MATH_CATEGORIES, MATH_SUBJECTS, getSubjectCategory } from '../lib/constants'
 import type { DiagnoseResponse, RankingItem } from '../lib/api'
 
 const SS_KEY = 'student_diagnosis_state'
@@ -72,7 +72,7 @@ export default function StudentDiagnosis() {
   // 手動タブ状態
   const [manualSubject, setManualSubject] = useState(saved?.manualSubject ?? SUBJECTS[0])
   const [manualLayer, setManualLayer] = useState(saved?.manualLayer ?? 1)
-  const [manualEnglishCategory, setManualEnglishCategory] = useState<string>('')
+  const [manualCategory, setManualCategory] = useState<string>('')
 
   // 状態変化をセッションストレージに保存
   useEffect(() => {
@@ -323,7 +323,7 @@ export default function StudentDiagnosis() {
             <label className="block text-sm font-medium text-gray-700 mb-1">科目</label>
             <select
               value={manualSubject}
-              onChange={e => { setManualSubject(e.target.value); setManualEnglishCategory('') }}
+              onChange={e => { setManualSubject(e.target.value); setManualCategory('') }}
               className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
             >
               {SUBJECTS.map(s => <option key={s}>{s}</option>)}
@@ -347,23 +347,32 @@ export default function StudentDiagnosis() {
               ))}
             </div>
           </div>
-          {manualSubject === '英語' && (
+          {getSubjectCategory(manualSubject) === 'english' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">伸ばしたい分野（任意）</label>
               <div className="flex flex-wrap gap-2">
-                {(['文法', '単語', '長文', '解釈', '英作文'] as const).map(c => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setManualEnglishCategory(prev => prev === c ? '' : c)}
+                {ENGLISH_CATEGORIES.map(c => (
+                  <button key={c} type="button"
+                    onClick={() => setManualCategory(prev => prev === c ? '' : c)}
                     className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
-                      manualEnglishCategory === c
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                      manualCategory === c ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
                     }`}
-                  >
-                    {c}
-                  </button>
+                  >{c}</button>
+                ))}
+              </div>
+            </div>
+          )}
+          {getSubjectCategory(manualSubject) === 'math' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">克服したい苦手（任意）</label>
+              <div className="flex flex-wrap gap-2">
+                {MATH_CATEGORIES.map(c => (
+                  <button key={c} type="button"
+                    onClick={() => setManualCategory(prev => prev === c ? '' : c)}
+                    className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                      manualCategory === c ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                    }`}
+                  >{c}</button>
                 ))}
               </div>
             </div>
@@ -421,16 +430,20 @@ export default function StudentDiagnosis() {
         <div>
           <h2 className="text-sm font-medium text-gray-500 mb-3">
             {manualSubject} / {LAYERS[manualLayer]}
-            {manualEnglishCategory && ` / ${manualEnglishCategory}`}
+            {manualCategory && ` / ${manualCategory}`}
             {' '}の参考書
           </h2>
           {rankingLoading ? (
             <p className="text-gray-500 text-center py-4">読み込み中...</p>
           ) : (
             <BookCardList
-              items={(ranking as RankingItem[]).filter(item =>
-                !manualEnglishCategory || item.english_category === manualEnglishCategory
-              )}
+              items={(ranking as RankingItem[]).filter(item => {
+                if (!manualCategory) return true
+                const cat = getSubjectCategory(manualSubject)
+                if (cat === 'english') return item.english_category === manualCategory
+                if (cat === 'math') return item.math_category === manualCategory
+                return true
+              })}
             />
           )}
         </div>

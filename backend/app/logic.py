@@ -52,7 +52,7 @@ def calculate_ranking(reviews: Sequence[Review], book_map: dict) -> list[dict]:
         key = str(r.instructor_id) if r.instructor_id else "__anon__"
         instructor_review_counts[key] += 1
 
-    book_scores: dict[str, dict] = defaultdict(lambda: {"weighted_sum": 0.0, "weight_sum": 0.0, "count": 0, "rating_sum": 0, "english_categories": []})
+    book_scores: dict[str, dict] = defaultdict(lambda: {"weighted_sum": 0.0, "weight_sum": 0.0, "count": 0, "rating_sum": 0, "english_categories": [], "math_categories": []})
 
     for r in reviews:
         key = str(r.instructor_id) if r.instructor_id else "__anon__"
@@ -64,6 +64,8 @@ def calculate_ranking(reviews: Sequence[Review], book_map: dict) -> list[dict]:
         book_scores[bid]["rating_sum"] += r.rating
         if r.english_category:
             book_scores[bid]["english_categories"].append(r.english_category)
+        if r.math_category:
+            book_scores[bid]["math_categories"].append(r.math_category)
 
     results = []
     for bid, data in book_scores.items():
@@ -72,8 +74,10 @@ def calculate_ranking(reviews: Sequence[Review], book_map: dict) -> list[dict]:
         score = data["weighted_sum"] / data["weight_sum"]
         avg_rating = data["rating_sum"] / data["count"]
         # 最頻のenglish_categoryを代表値として使用
-        cats = data["english_categories"]
-        english_category = max(set(cats), key=cats.count) if cats else ""
+        ecats = data["english_categories"]
+        english_category = max(set(ecats), key=ecats.count) if ecats else ""
+        mcats = data["math_categories"]
+        math_category = max(set(mcats), key=mcats.count) if mcats else ""
         book = book_map.get(bid)
         if book:
             results.append({
@@ -83,6 +87,7 @@ def calculate_ranking(reviews: Sequence[Review], book_map: dict) -> list[dict]:
                 "avg_rating": round(avg_rating, 2),
                 "review_count": data["count"],
                 "english_category": english_category,
+                "math_category": math_category,
             })
 
     results.sort(key=lambda x: x["score"], reverse=True)

@@ -13,3 +13,20 @@ export const LAYERS: Record<number, string> = {
 
 export const GRADES = ["高1", "高2", "高3", "浪人"] as const
 
+export const ENGLISH_CATEGORIES = ["文法", "単語", "長文", "解釈", "英作文"] as const
+
+export const MATH_CATEGORIES = [
+  "教科書的知識",
+  "典型解法（青チャートレベル）",
+  "典型解法（地方国公立2次レベル）",
+  "初見の難問",
+] as const
+
+export const MATH_SUBJECTS = ["文系数学", "理系数学"] as const
+
+export function getSubjectCategory(subject: string): 'english' | 'math' | null {
+  if (subject === '英語') return 'english'
+  if ((MATH_SUBJECTS as readonly string[]).includes(subject)) return 'math'
+  return null
+}
+

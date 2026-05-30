@@ -48,6 +48,7 @@ export interface RankingItem {
   avg_rating: number
   review_count: number
   english_category: string
+  math_category: string
 }
 
 export interface DiagnoseRequest {
@@ -107,6 +108,7 @@ export const createReview = (bookId: string, data: {
   completion_period: string
   self_study_suitability: string
   english_category: string
+  math_category: string
 }) => apiClient.post<Review[]>(`/api/v1/books/${bookId}/reviews`, data).then(r => r.data)
 
 export const updateReview = (reviewId: string, data: Partial<{

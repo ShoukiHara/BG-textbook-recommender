@@ -39,6 +39,7 @@ class ReviewCreate(BaseModel):
     completion_period: str = ""
     self_study_suitability: str = ""
     english_category: str = ""
+    math_category: str = ""
 
 
 class ReviewUpdate(BaseModel):
@@ -55,6 +56,7 @@ class ReviewUpdate(BaseModel):
     completion_period: str | None = None
     self_study_suitability: str | None = None
     english_category: str | None = None
+    math_category: str | None = None
 
 
 class ReviewOut(BaseModel):
@@ -74,6 +76,7 @@ class ReviewOut(BaseModel):
     completion_period: str
     self_study_suitability: str
     english_category: str
+    math_category: str
     created_at: datetime
 
     model_config = {"from_attributes": True}

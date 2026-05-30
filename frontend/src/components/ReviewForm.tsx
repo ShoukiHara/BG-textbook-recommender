@@ -1,9 +1,7 @@
 import { useState } from 'react'
 import StarRating from './StarRating'
-import { LAYERS } from '../lib/constants'
+import { LAYERS, ENGLISH_CATEGORIES, MATH_CATEGORIES, MATH_SUBJECTS } from '../lib/constants'
 import type { Instructor } from '../lib/api'
-
-const ENGLISH_CATEGORIES = ['文法', '単語', '長文', '解釈', '英作文'] as const
 
 interface Props {
   bookId: string
@@ -23,6 +21,7 @@ interface Props {
     completion_period: string
     self_study_suitability: string
     english_category: string
+    math_category: string
   }) => Promise<void>
 }
 
@@ -59,6 +58,7 @@ export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
   const [selfStudy, setSelfStudy] = useState('')
   const [strengthens, setStrengthens] = useState('')
   const [englishCategory, setEnglishCategory] = useState('')
+  const [mathCategory, setMathCategory] = useState('')
 
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -98,6 +98,7 @@ export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
         strengthens_weaknesses: strengthens,
         self_study_suitability: selfStudy,
         english_category: englishCategory,
+        math_category: mathCategory,
       })
       setSuccess(true)
       setLayerRatings({})
@@ -106,6 +107,7 @@ export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
       setSelfStudy('')
       setStrengthens('')
       setEnglishCategory('')
+      setMathCategory('')
     } catch {
       setError('投稿に失敗しました。再度お試しください。')
     } finally {
@@ -184,6 +186,29 @@ export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
                 onClick={() => setEnglishCategory(prev => prev === c ? '' : c)}
                 className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
                   englishCategory === c
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 数学カテゴリ（数学のみ） */}
+      {subject && (MATH_SUBJECTS as readonly string[]).includes(subject) && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">どの苦手に効くか</label>
+          <div className="flex flex-wrap gap-2">
+            {MATH_CATEGORIES.map(c => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setMathCategory(prev => prev === c ? '' : c)}
+                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                  mathCategory === c
                     ? 'bg-blue-600 text-white border-blue-600'
                     : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
                 }`}

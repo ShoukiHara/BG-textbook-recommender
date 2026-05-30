@@ -56,6 +56,7 @@ class Review(Base):
     completion_period: Mapped[str] = mapped_column(Text, nullable=False, default="")
     self_study_suitability: Mapped[str] = mapped_column(Text, nullable=False, default="")
     english_category: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    math_category: Mapped[str] = mapped_column(Text, nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
 
