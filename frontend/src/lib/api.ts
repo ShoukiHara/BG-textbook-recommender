@@ -60,6 +60,7 @@ export interface DiagnoseRequest {
   weak_points: string
   learning_style: string
   english_weak_areas: string[]
+  math_weak_areas: string[]
 }
 
 export interface RecommendedBook {

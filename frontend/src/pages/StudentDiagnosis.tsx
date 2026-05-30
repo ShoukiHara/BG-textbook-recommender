@@ -38,6 +38,7 @@ export default function StudentDiagnosis() {
     weak_points: '',
     learning_style: '',
     english_weak_areas: [] as string[],
+    math_weak_areas: [] as string[],
   })
   const [mockScores, setMockScores] = useState<{ exam: string; deviation: string }[]>([{ exam: '', deviation: '' }])
 
@@ -265,6 +266,36 @@ export default function StudentDiagnosis() {
                         english_weak_areas: selected
                           ? f.english_weak_areas.filter(a => a !== area)
                           : [...f.english_weak_areas, area],
+                      }))}
+                      className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                        selected
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                      }`}
+                    >
+                      {area}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {getSubjectCategory(aiForm.subject) === 'math' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">克服したい苦手（複数選択可）</label>
+              <div className="flex flex-wrap gap-2">
+                {MATH_CATEGORIES.map(area => {
+                  const selected = aiForm.math_weak_areas.includes(area)
+                  return (
+                    <button
+                      key={area}
+                      type="button"
+                      onClick={() => setAiForm(f => ({
+                        ...f,
+                        math_weak_areas: selected
+                          ? f.math_weak_areas.filter(a => a !== area)
+                          : [...f.math_weak_areas, area],
                       }))}
                       className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
                         selected

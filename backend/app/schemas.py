@@ -126,6 +126,7 @@ class DiagnoseRequest(BaseModel):
     weak_points: str
     learning_style: str
     english_weak_areas: list[str] = []
+    math_weak_areas: list[str] = []
 
 
 class RecommendedBook(BaseModel):
