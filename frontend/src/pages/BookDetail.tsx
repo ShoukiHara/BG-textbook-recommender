@@ -133,9 +133,9 @@ export default function BookDetail() {
                     ].filter(Boolean)
                     return (
                       <div key={rep.instructor_id ?? rep.instructor_name} className="bg-white border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-start justify-between mb-3">
+                        <div className="mb-3">
                           <span className="font-medium text-gray-800">{rep.instructor_name}</span>
-                          <div className="flex flex-wrap gap-2 justify-end">
+                          <div className="flex flex-wrap gap-2 mt-1.5">
                             {gReviews.map(r => (
                               <div key={r.id} className="flex items-center gap-1">
                                 <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
