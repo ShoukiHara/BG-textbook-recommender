@@ -56,9 +56,10 @@ async def list_reviews(book_id: UUID, db: AsyncSession = Depends(get_db)):
     return await _get_reviews_with_names(db, book_id)
 
 
-@router.get("/instructors/{instructor_id}/reviews", response_model=list[ReviewOut])
-async def list_reviews_by_instructor(
-    instructor_id: UUID,
+@router.get("/reviews", response_model=list[ReviewOut])
+async def list_reviews_filtered(
+    book_id: UUID | None = None,
+    instructor_id: UUID | None = None,
     db: AsyncSession = Depends(get_db),
     _: None = Depends(require_admin),
 ):
@@ -66,9 +67,12 @@ async def list_reviews_by_instructor(
         select(Review, func.coalesce(Instructor.name, literal("匿名")).label("instructor_name"), Book.title.label("book_title"))
         .outerjoin(Instructor, Review.instructor_id == Instructor.id)
         .join(Book, Review.book_id == Book.id)
-        .where(Review.instructor_id == instructor_id)
         .order_by(Review.created_at.desc())
     )
+    if book_id:
+        stmt = stmt.where(Review.book_id == book_id)
+    if instructor_id:
+        stmt = stmt.where(Review.instructor_id == instructor_id)
     rows = (await db.execute(stmt)).all()
     return [
         ReviewOut(

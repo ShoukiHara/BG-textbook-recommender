@@ -86,8 +86,9 @@ export const createBook = (data: { title: string; subject: string }) =>
 export const fetchReviews = (bookId: string) =>
   apiClient.get<Review[]>(`/api/v1/books/${bookId}/reviews`).then(r => r.data)
 
-export const fetchReviewsByInstructor = (instructorId: string, token: string) =>
-  apiClient.get<Review[]>(`/api/v1/instructors/${instructorId}/reviews`, {
+export const fetchReviewsFiltered = (params: { book_id?: string; instructor_id?: string }, token: string) =>
+  apiClient.get<Review[]>('/api/v1/reviews', {
+    params,
     headers: { Authorization: `Bearer ${token}` },
   }).then(r => r.data)
 
