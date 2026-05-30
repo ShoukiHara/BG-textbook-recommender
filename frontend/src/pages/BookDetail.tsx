@@ -100,77 +100,92 @@ export default function BookDetail() {
 
       {/* レビュー一覧 */}
       <section className="mb-8">
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">
-          講師レビュー（{reviews.length}件）
-        </h2>
-        {reviewsLoading ? (
-          <p className="text-gray-500 text-sm">読み込み中...</p>
-        ) : reviews.length === 0 ? (
-          <p className="text-gray-500 text-sm">まだレビューがありません。</p>
-        ) : (
-          <div className="space-y-4">
-            {reviews.map(review => (
-              <div key={review.id} className="bg-white border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="font-medium text-gray-800">{review.instructor_name}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
-                      {LAYERS[review.layer]}
-                    </span>
-                    <StarRating value={review.rating} readOnly />
-                  </div>
+        {(() => {
+          // 同じ講師のレビューをグループ化
+          const groupMap = new Map<string, typeof reviews>()
+          for (const r of reviews) {
+            const key = r.instructor_id ?? r.instructor_name
+            if (!groupMap.has(key)) groupMap.set(key, [])
+            groupMap.get(key)!.push(r)
+          }
+          const groups = Array.from(groupMap.values()).map(g => ({
+            reviews: [...g].sort((a, b) => a.layer - b.layer),
+          }))
+          return (
+            <>
+              <h2 className="text-lg font-semibold text-gray-800 mb-3">
+                講師レビュー（{groups.length}件）
+              </h2>
+              {reviewsLoading ? (
+                <p className="text-gray-500 text-sm">読み込み中...</p>
+              ) : groups.length === 0 ? (
+                <p className="text-gray-500 text-sm">まだレビューがありません。</p>
+              ) : (
+                <div className="space-y-4">
+                  {groups.map(({ reviews: gReviews }) => {
+                    const rep = gReviews[0]
+                    const chips = [
+                      rep.explanation_quality && `解説: ${rep.explanation_quality}`,
+                      rep.problem_volume && `問題量: ${rep.problem_volume}`,
+                      rep.target_deviation && `偏差値: ${rep.target_deviation}`,
+                      rep.completion_period && rep.completion_period,
+                      rep.self_study_suitability && rep.self_study_suitability,
+                    ].filter(Boolean)
+                    return (
+                      <div key={rep.instructor_id ?? rep.instructor_name} className="bg-white border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <span className="font-medium text-gray-800">{rep.instructor_name}</span>
+                          <div className="flex flex-wrap gap-2 justify-end">
+                            {gReviews.map(r => (
+                              <div key={r.id} className="flex items-center gap-1">
+                                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                                  {LAYERS[r.layer]}
+                                </span>
+                                <StarRating value={r.rating} readOnly />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          {chips.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {chips.map(chip => (
+                                <span key={chip as string} className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">
+                                  {chip}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {rep.strengthens_weaknesses && (
+                            <p className="text-gray-600 text-xs">強化できる弱点: {rep.strengthens_weaknesses}</p>
+                          )}
+                          {[
+                            { label: '① 使用時期・期間',     value: rep.period },
+                            { label: '② 前の参考書との接続', value: rep.before_connection },
+                            { label: '③ 後の参考書との接続', value: rep.after_connection },
+                            { label: '④ 使用感',             value: rep.usage_feel },
+                          ].filter(f => f.value).map(({ label, value }) => (
+                            <div key={label}>
+                              <span className="font-medium text-gray-500">{label}</span>
+                              <p className="text-gray-700 whitespace-pre-wrap mt-0.5">{value}</p>
+                            </div>
+                          ))}
+                          {!rep.explanation_quality && !rep.problem_volume && !rep.strengthens_weaknesses &&
+                           !rep.period && !rep.before_connection && !rep.after_connection && !rep.usage_feel && (
+                            <p className="text-gray-300">―</p>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-400 mt-3">
+                          {new Date(rep.created_at).toLocaleDateString('ja-JP')}
+                        </p>
+                      </div>
+                    )
+                  })}
                 </div>
-                <div className="space-y-2 text-sm">
-                  {[
-                    review.explanation_quality && `解説: ${review.explanation_quality}`,
-                    review.problem_volume && `問題量: ${review.problem_volume}`,
-                    review.target_deviation && `偏差値: ${review.target_deviation}`,
-                    review.completion_period && review.completion_period,
-                    review.self_study_suitability && review.self_study_suitability,
-                  ].filter(Boolean).length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {[
-                        review.explanation_quality && `解説: ${review.explanation_quality}`,
-                        review.problem_volume && `問題量: ${review.problem_volume}`,
-                        review.target_deviation && `偏差値: ${review.target_deviation}`,
-                        review.completion_period && review.completion_period,
-                        review.self_study_suitability && review.self_study_suitability,
-                      ].filter(Boolean).map(chip => (
-                        <span key={chip as string} className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">
-                          {chip}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {review.strengthens_weaknesses && (
-                    <p className="text-gray-600 text-xs">強化できる弱点: {review.strengthens_weaknesses}</p>
-                  )}
-
-                  {[
-                    { label: '① 使用時期・期間',     value: review.period },
-                    { label: '② 前の参考書との接続', value: review.before_connection },
-                    { label: '③ 後の参考書との接続', value: review.after_connection },
-                    { label: '④ 使用感',             value: review.usage_feel },
-                  ].filter(f => f.value).map(({ label, value }) => (
-                    <div key={label}>
-                      <span className="font-medium text-gray-500">{label}</span>
-                      <p className="text-gray-700 whitespace-pre-wrap mt-0.5">{value}</p>
-                    </div>
-                  ))}
-
-                  {!review.explanation_quality && !review.problem_volume && !review.strengthens_weaknesses &&
-                   !review.period && !review.before_connection && !review.after_connection && !review.usage_feel && (
-                    <p className="text-gray-300">―</p>
-                  )}
-                </div>
-                <p className="text-xs text-gray-400 mt-3">
-                  {new Date(review.created_at).toLocaleDateString('ja-JP')}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
+              )}
+            </>
+          )
+        })()}
       </section>
 
       {/* 関連参考書 */}

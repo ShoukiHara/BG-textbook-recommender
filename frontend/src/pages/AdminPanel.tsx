@@ -229,35 +229,83 @@ function ReviewEditForm({
 }
 
 // ----------------------------------------------------------------
-// ReviewCard — レビュー表示カード（読み取り専用）
+// ReviewGroup — グループ化ユーティリティ
 // ----------------------------------------------------------------
 
-function ReviewCard({ review, onEdit, onDelete }: {
-  review: Review; onEdit: () => void; onDelete: () => void
+type ReviewGroup = {
+  key: string
+  book_title: string
+  book_id: string
+  subject: string
+  instructor_name: string
+  instructor_id: string | null
+  reviews: Review[]
+}
+
+function groupReviews(reviews: Review[]): ReviewGroup[] {
+  const map = new Map<string, ReviewGroup>()
+  for (const r of reviews) {
+    const key = `${r.instructor_id ?? r.instructor_name}___${r.book_id}`
+    if (!map.has(key)) {
+      map.set(key, {
+        key,
+        book_title: r.book_title,
+        book_id: r.book_id,
+        subject: r.subject,
+        instructor_name: r.instructor_name,
+        instructor_id: r.instructor_id,
+        reviews: [],
+      })
+    }
+    map.get(key)!.reviews.push(r)
+  }
+  for (const g of map.values()) g.reviews.sort((a, b) => a.layer - b.layer)
+  return Array.from(map.values())
+}
+
+// ----------------------------------------------------------------
+// ReviewGroupCard — グループ表示カード（読み取り専用）
+// ----------------------------------------------------------------
+
+function ReviewGroupCard({ group, onEdit, onDeleteLayer }: {
+  group: ReviewGroup
+  onEdit: () => void
+  onDeleteLayer: (reviewId: string) => void
 }) {
+  const rep = group.reviews[0]
   const chips = [
-    review.explanation_quality && `解説: ${review.explanation_quality}`,
-    review.problem_volume && `問題量: ${review.problem_volume}`,
-    review.target_deviation && `偏差値: ${review.target_deviation}`,
-    review.completion_period && review.completion_period,
-    review.self_study_suitability && review.self_study_suitability,
+    rep.explanation_quality && `解説: ${rep.explanation_quality}`,
+    rep.problem_volume && `問題量: ${rep.problem_volume}`,
+    rep.target_deviation && `偏差値: ${rep.target_deviation}`,
+    rep.completion_period && rep.completion_period,
+    rep.self_study_suitability && rep.self_study_suitability,
   ].filter(Boolean)
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-medium text-sm">{review.instructor_name}</span>
-          {review.book_title && (
-            <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">{review.book_title}</span>
+          <span className="font-medium text-sm">{group.instructor_name}</span>
+          {group.book_title && (
+            <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">{group.book_title}</span>
           )}
-          <span className="text-xs bg-gray-100 px-2 py-0.5 rounded">{LAYERS[review.layer]}</span>
-          <StarRating value={review.rating} readOnly />
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 shrink-0">
           <button onClick={onEdit} className="text-xs text-blue-600 hover:underline">編集</button>
-          <button onClick={onDelete} className="text-xs text-red-600 hover:underline">削除</button>
         </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-2">
+        {group.reviews.map(r => (
+          <div key={r.id} className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded px-2 py-1">
+            <span className="text-xs text-gray-600">{LAYERS[r.layer]}</span>
+            <StarRating value={r.rating} readOnly />
+            <button
+              onClick={() => { if (confirm(`レイヤー「${LAYERS[r.layer]}」のレビューを削除しますか？`)) onDeleteLayer(r.id) }}
+              className="text-xs text-red-400 hover:text-red-600 ml-1"
+            >削除</button>
+          </div>
+        ))}
       </div>
 
       {chips.length > 0 && (
@@ -268,15 +316,15 @@ function ReviewCard({ review, onEdit, onDelete }: {
         </div>
       )}
 
-      {review.strengthens_weaknesses && (
-        <p className="text-xs text-gray-600 mb-1">強化できる弱点: {review.strengthens_weaknesses}</p>
+      {rep.strengthens_weaknesses && (
+        <p className="text-xs text-gray-600 mb-1">強化できる弱点: {rep.strengthens_weaknesses}</p>
       )}
 
       {[
-        { label: '使用時期', value: review.period },
-        { label: '前の参考書', value: review.before_connection },
-        { label: '後の参考書', value: review.after_connection },
-        { label: '使用感', value: review.usage_feel },
+        { label: '使用時期', value: rep.period },
+        { label: '前の参考書', value: rep.before_connection },
+        { label: '後の参考書', value: rep.after_connection },
+        { label: '使用感', value: rep.usage_feel },
       ].filter(f => f.value).map(({ label, value }) => (
         <p key={label} className="text-xs text-gray-600">
           <span className="font-medium text-gray-500">{label}: </span>{value}
@@ -318,7 +366,9 @@ function ReviewManager({ token }: { token: string }) {
     staleTime: 0,
   })
 
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const groups = groupReviews(reviews as Review[])
+
+  const [editingKey, setEditingKey] = useState<string | null>(null)
   const [editLayerRatings, setEditLayerRatings] = useState<Record<number, number>>({})
   const [editFields, setEditFields] = useState<EditFields>(EMPTY_EDIT_FIELDS)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -328,10 +378,13 @@ function ReviewManager({ token }: { token: string }) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['reviews-filtered'] }),
   })
 
-  const startEdit = (r: Review) => {
-    setEditingId(r.id)
+  const startEdit = (group: ReviewGroup) => {
+    setEditingKey(group.key)
     setSaveError(null)
-    setEditLayerRatings({ [r.layer]: r.rating })
+    const ratings: Record<number, number> = {}
+    for (const r of group.reviews) ratings[r.layer] = r.rating
+    setEditLayerRatings(ratings)
+    const r = group.reviews[0]
     setEditFields({
       period: r.period, before_connection: r.before_connection,
       after_connection: r.after_connection, usage_feel: r.usage_feel,
@@ -342,32 +395,37 @@ function ReviewManager({ token }: { token: string }) {
     })
   }
 
-  const handleSave = async (r: Review) => {
+  const handleGroupSave = async (group: ReviewGroup) => {
     const entries = Object.entries(editLayerRatings)
     if (entries.length === 0) return
     setSaveError(null)
     try {
-      const originalEntry = entries.find(([l]) => Number(l) === r.layer)
-      const [primaryLayer, primaryRating] = originalEntry ?? entries[0]
-      const additionalEntries = entries.filter(([l]) => Number(l) !== Number(primaryLayer))
+      const existingByLayer = new Map(group.reviews.map(r => [r.layer, r]))
+      const selectedLayers = new Set(entries.map(([l]) => Number(l)))
 
-      await updateReview(r.id, {
-        layer: Number(primaryLayer),
-        rating: Number(primaryRating),
-        ...editFields,
-      }, token)
+      // 既存レイヤー → 更新、新規レイヤー → 作成
+      for (const [lStr, rt] of entries) {
+        const l = Number(lStr)
+        const existing = existingByLayer.get(l)
+        if (existing) {
+          await updateReview(existing.id, { layer: l, rating: Number(rt), ...editFields }, token)
+        } else {
+          await adminCreateReviews({
+            book_id: group.book_id,
+            instructor_id: group.instructor_id,
+            layer_ratings: [{ layer: l, rating: Number(rt) }],
+            ...editFields,
+          }, token)
+        }
+      }
 
-      if (additionalEntries.length > 0) {
-        await adminCreateReviews({
-          book_id: r.book_id,
-          instructor_id: r.instructor_id,
-          layer_ratings: additionalEntries.map(([l, rt]) => ({ layer: Number(l), rating: Number(rt) })),
-          ...editFields,
-        }, token)
+      // チェックを外したレイヤー → 削除
+      for (const [layer, r] of existingByLayer) {
+        if (!selectedLayers.has(layer)) await deleteReview(r.id, token)
       }
 
       await qc.invalidateQueries({ queryKey: ['reviews-filtered'] })
-      setEditingId(null)
+      setEditingKey(null)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
       setSaveError(`保存エラー: ${msg}`)
@@ -383,7 +441,7 @@ function ReviewManager({ token }: { token: string }) {
           <label className="block text-xs text-gray-500 mb-1">科目</label>
           <select
             value={selectedSubject}
-            onChange={e => { setSelectedSubject(e.target.value); setSelectedBookId(''); setEditingId(null) }}
+            onChange={e => { setSelectedSubject(e.target.value); setSelectedBookId(''); setEditingKey(null) }}
             className="border border-gray-300 rounded-md px-3 py-2 text-sm w-36"
           >
             <option value="">すべて</option>
@@ -394,7 +452,7 @@ function ReviewManager({ token }: { token: string }) {
           <label className="block text-xs text-gray-500 mb-1">参考書</label>
           <select
             value={selectedBookId}
-            onChange={e => { setSelectedBookId(e.target.value); setEditingId(null) }}
+            onChange={e => { setSelectedBookId(e.target.value); setEditingKey(null) }}
             className="border border-gray-300 rounded-md px-3 py-2 text-sm w-64"
           >
             <option value="">すべて</option>
@@ -409,7 +467,7 @@ function ReviewManager({ token }: { token: string }) {
           <label className="block text-xs text-gray-500 mb-1">講師</label>
           <select
             value={selectedInstructorId}
-            onChange={e => { setSelectedInstructorId(e.target.value); setEditingId(null) }}
+            onChange={e => { setSelectedInstructorId(e.target.value); setEditingKey(null) }}
             className="border border-gray-300 rounded-md px-3 py-2 text-sm w-48"
           >
             <option value="">すべて</option>
@@ -421,7 +479,7 @@ function ReviewManager({ token }: { token: string }) {
         {(selectedSubject || selectedBookId || selectedInstructorId) && (
           <div className="flex items-end">
             <button
-              onClick={() => { setSelectedSubject(''); setSelectedBookId(''); setSelectedInstructorId(''); setEditingId(null) }}
+              onClick={() => { setSelectedSubject(''); setSelectedBookId(''); setSelectedInstructorId(''); setEditingKey(null) }}
               className="text-xs text-gray-400 hover:text-gray-600 border border-gray-200 rounded px-2 py-1.5"
             >クリア</button>
           </div>
@@ -429,14 +487,14 @@ function ReviewManager({ token }: { token: string }) {
       </div>
 
       {isLoading && <p className="text-gray-500 text-sm">読み込み中...</p>}
-      {reviews.length > 0 && (
+      {groups.length > 0 && (
         <div className="space-y-3">
-          {(reviews as Review[]).map(r => (
-            <div key={r.id} className="bg-white border border-gray-200 rounded-lg p-4">
-              {editingId === r.id ? (
+          {groups.map(group => (
+            <div key={group.key} className="bg-white border border-gray-200 rounded-lg p-4">
+              {editingKey === group.key ? (
                 <ReviewEditForm
-                  reviewId={r.id}
-                  subject={r.subject}
+                  reviewId={group.key}
+                  subject={group.subject}
                   layerRatings={editLayerRatings}
                   fields={editFields}
                   saveError={saveError}
@@ -452,14 +510,14 @@ function ReviewManager({ token }: { token: string }) {
                     setEditLayerRatings(prev => ({ ...prev, [layer]: rating }))
                   }
                   onFieldChange={(key, value) => setEditFields(f => ({ ...f, [key]: value }))}
-                  onSave={() => handleSave(r)}
-                  onCancel={() => setEditingId(null)}
+                  onSave={() => handleGroupSave(group)}
+                  onCancel={() => setEditingKey(null)}
                 />
               ) : (
-                <ReviewCard
-                  review={r}
-                  onEdit={() => startEdit(r)}
-                  onDelete={() => { if (confirm('削除しますか？')) deleteMut.mutate(r.id) }}
+                <ReviewGroupCard
+                  group={group}
+                  onEdit={() => startEdit(group)}
+                  onDeleteLayer={id => deleteMut.mutate(id)}
                 />
               )}
             </div>
