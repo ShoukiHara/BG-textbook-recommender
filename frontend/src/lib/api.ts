@@ -47,6 +47,7 @@ export interface RankingItem {
   score: number
   avg_rating: number
   review_count: number
+  english_category: string
 }
 
 export interface DiagnoseRequest {

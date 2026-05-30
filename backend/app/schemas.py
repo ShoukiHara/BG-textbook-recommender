@@ -109,6 +109,7 @@ class RankingItem(BaseModel):
     score: float
     avg_rating: float
     review_count: int
+    english_category: str = ""
 
 
 # --- AI診断 ---

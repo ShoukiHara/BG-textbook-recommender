@@ -52,7 +52,7 @@ def calculate_ranking(reviews: Sequence[Review], book_map: dict) -> list[dict]:
         key = str(r.instructor_id) if r.instructor_id else "__anon__"
         instructor_review_counts[key] += 1
 
-    book_scores: dict[str, dict] = defaultdict(lambda: {"weighted_sum": 0.0, "weight_sum": 0.0, "count": 0, "rating_sum": 0})
+    book_scores: dict[str, dict] = defaultdict(lambda: {"weighted_sum": 0.0, "weight_sum": 0.0, "count": 0, "rating_sum": 0, "english_categories": []})
 
     for r in reviews:
         key = str(r.instructor_id) if r.instructor_id else "__anon__"
@@ -62,6 +62,8 @@ def calculate_ranking(reviews: Sequence[Review], book_map: dict) -> list[dict]:
         book_scores[bid]["weight_sum"] += weight
         book_scores[bid]["count"] += 1
         book_scores[bid]["rating_sum"] += r.rating
+        if r.english_category:
+            book_scores[bid]["english_categories"].append(r.english_category)
 
     results = []
     for bid, data in book_scores.items():
@@ -69,6 +71,9 @@ def calculate_ranking(reviews: Sequence[Review], book_map: dict) -> list[dict]:
             continue
         score = data["weighted_sum"] / data["weight_sum"]
         avg_rating = data["rating_sum"] / data["count"]
+        # 最頻のenglish_categoryを代表値として使用
+        cats = data["english_categories"]
+        english_category = max(set(cats), key=cats.count) if cats else ""
         book = book_map.get(bid)
         if book:
             results.append({
@@ -77,6 +82,7 @@ def calculate_ranking(reviews: Sequence[Review], book_map: dict) -> list[dict]:
                 "score": round(score, 4),
                 "avg_rating": round(avg_rating, 2),
                 "review_count": data["count"],
+                "english_category": english_category,
             })
 
     results.sort(key=lambda x: x["score"], reverse=True)

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { diagnose, fetchRanking } from '../lib/api'
-import RankingList from '../components/RankingList'
+import BookCardList from '../components/BookCardList'
 import DiagnosisFeedbackForm from '../components/DiagnosisFeedbackForm'
 import { SUBJECTS, LAYERS, GRADES } from '../lib/constants'
 import type { DiagnoseResponse, RankingItem } from '../lib/api'
@@ -72,6 +72,7 @@ export default function StudentDiagnosis() {
   // 手動タブ状態
   const [manualSubject, setManualSubject] = useState(saved?.manualSubject ?? SUBJECTS[0])
   const [manualLayer, setManualLayer] = useState(saved?.manualLayer ?? 1)
+  const [manualEnglishCategory, setManualEnglishCategory] = useState<string>('')
 
   // 状態変化をセッションストレージに保存
   useEffect(() => {
@@ -85,6 +86,7 @@ export default function StudentDiagnosis() {
     enabled: tab === 'manual',
     staleTime: 10 * 60 * 1000,
   })
+
 
   const handleDiagnose = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -321,7 +323,7 @@ export default function StudentDiagnosis() {
             <label className="block text-sm font-medium text-gray-700 mb-1">科目</label>
             <select
               value={manualSubject}
-              onChange={e => setManualSubject(e.target.value)}
+              onChange={e => { setManualSubject(e.target.value); setManualEnglishCategory('') }}
               className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
             >
               {SUBJECTS.map(s => <option key={s}>{s}</option>)}
@@ -345,6 +347,27 @@ export default function StudentDiagnosis() {
               ))}
             </div>
           </div>
+          {manualSubject === '英語' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">伸ばしたい分野（任意）</label>
+              <div className="flex flex-wrap gap-2">
+                {(['文法', '単語', '長文', '解釈', '英作文'] as const).map(c => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setManualEnglishCategory(prev => prev === c ? '' : c)}
+                    className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                      manualEnglishCategory === c
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -393,16 +416,22 @@ export default function StudentDiagnosis() {
         </div>
       )}
 
-      {/* 手動タブのランキング */}
+      {/* 手動タブの参考書一覧 */}
       {tab === 'manual' && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-800 mb-3">
-            {manualSubject} / {LAYERS[manualLayer]} ランキング
+          <h2 className="text-sm font-medium text-gray-500 mb-3">
+            {manualSubject} / {LAYERS[manualLayer]}
+            {manualEnglishCategory && ` / ${manualEnglishCategory}`}
+            {' '}の参考書
           </h2>
           {rankingLoading ? (
             <p className="text-gray-500 text-center py-4">読み込み中...</p>
           ) : (
-            <RankingList items={ranking as RankingItem[]} />
+            <BookCardList
+              items={(ranking as RankingItem[]).filter(item =>
+                !manualEnglishCategory || item.english_category === manualEnglishCategory
+              )}
+            />
           )}
         </div>
       )}
