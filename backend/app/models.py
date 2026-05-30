@@ -81,6 +81,9 @@ class AIDiagnosisFeedback(Base):
     books_history: Mapped[str] = mapped_column(Text, nullable=False, default="")
     weak_points: Mapped[str] = mapped_column(Text, nullable=False, default="")
     learning_style: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    english_weak_areas: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    math_weak_areas: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    science_weak_areas: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
 
     diagnosed_layer: Mapped[int] = mapped_column(Integer, nullable=False)
     diagnosis_reason: Mapped[str] = mapped_column(Text, nullable=False, default="")

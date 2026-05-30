@@ -116,6 +116,8 @@ class RankingItem(BaseModel):
     avg_rating: float
     review_count: int
     english_category: str = ""
+    math_category: str = ""
+    science_category: str = ""
 
 
 # --- AI診断 ---
@@ -159,6 +161,9 @@ class AIDiagnosisFeedbackCreate(BaseModel):
     books_history: str = ""
     weak_points: str = ""
     learning_style: str = ""
+    english_weak_areas: list[str] = []
+    math_weak_areas: list[str] = []
+    science_weak_areas: list[str] = []
     diagnosed_layer: int
     diagnosis_reason: str = ""
     recommended_books: list[dict] = []
@@ -175,6 +180,9 @@ class AIDiagnosisFeedbackOut(BaseModel):
     books_history: str
     weak_points: str
     learning_style: str
+    english_weak_areas: list[str]
+    math_weak_areas: list[str]
+    science_weak_areas: list[str]
     diagnosed_layer: int
     diagnosis_reason: str
     recommended_books: list[dict]

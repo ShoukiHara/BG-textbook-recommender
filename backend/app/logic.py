@@ -38,11 +38,23 @@ def compute_review_summary(reviews: Sequence[Review]) -> dict:
 
     avg_rating = sum(r.rating for r in reviews) / len(reviews)
 
+    # カテゴリ集計（最頻値）
+    def most_common(vals: list[str]) -> str:
+        filtered = [v for v in vals if v]
+        return max(set(filtered), key=filtered.count) if filtered else ""
+
+    english_category = most_common([r.english_category for r in reviews])
+    math_category = most_common([r.math_category for r in reviews])
+    science_category = most_common([r.science_category for r in reviews])
+
     return {
         "strengthens": strengthens,
         "layer_counts": layer_counts,
         "avg_rating": round(avg_rating, 2),
         "count": len(reviews),
+        "english_category": english_category,
+        "math_category": math_category,
+        "science_category": science_category,
     }
 
 

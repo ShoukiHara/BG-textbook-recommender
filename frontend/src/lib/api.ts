@@ -173,6 +173,9 @@ export interface AIDiagnosisFeedbackCreate {
   books_history: string
   weak_points: string
   learning_style: string
+  english_weak_areas: string[]
+  math_weak_areas: string[]
+  science_weak_areas: string[]
   diagnosed_layer: number
   diagnosis_reason: string
   recommended_books: RecommendedBook[]

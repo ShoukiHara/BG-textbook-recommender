@@ -34,6 +34,9 @@ def _book_summary(book: Book) -> str:
     if layer_counts:
         layer_str = ", ".join(f"レイヤー{l}（{n}件）" for l, n in sorted(layer_counts.items()))
         parts.append(f"レビューのあるレイヤー: {layer_str}")
+    for key, label in [("english_category", "英語カテゴリ"), ("math_category", "数学カテゴリ"), ("science_category", "理科カテゴリ")]:
+        if cache.get(key):
+            parts.append(f"{label}: {cache[key]}")
 
     return "\n".join(parts)
 
@@ -63,7 +66,7 @@ def _build_diagnose_prompt(body: DiagnoseRequest, books_section: str) -> str:
 これまで使用・現在使用中の参考書: {body.books_history}
 具体的な弱点: {body.weak_points}
 学習スタイルの好み: {body.learning_style}{f"""
-英語の弱点分野: {', '.join(body.english_weak_areas)}""" if body.english_weak_areas else ""}{f"""
+英語の伸ばしたい分野: {', '.join(body.english_weak_areas)}""" if body.english_weak_areas else ""}{f"""
 数学の伸ばしたい分野: {', '.join(body.math_weak_areas)}""" if body.math_weak_areas else ""}{f"""
 理科の伸ばしたい分野: {', '.join(body.science_weak_areas)}""" if body.science_weak_areas else ""}
 
@@ -110,6 +113,9 @@ async def _do_generate_guide(book: Book, db: AsyncSession) -> str | None:
             ("完了にかかる期間", review.completion_period),
             ("独学適性",         review.self_study_suitability),
             ("強化できる弱点",   review.strengthens_weaknesses),
+            ("伸ばせる分野（英語）", review.english_category),
+            ("伸ばせる分野（数学）", review.math_category),
+            ("伸ばせる分野（理科）", review.science_category),
             ("使用時期・期間",   review.period),
             ("前の参考書との接続", review.before_connection),
             ("後の参考書との接続", review.after_connection),

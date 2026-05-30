@@ -181,7 +181,7 @@ export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
       {/* 英語カテゴリ（英語のみ） */}
       {subject === '英語' && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">英語カテゴリ</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">伸ばせる分野</label>
           <div className="flex flex-wrap gap-2">
             {ENGLISH_CATEGORIES.map(c => (
               <button
@@ -204,7 +204,7 @@ export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
       {/* 数学カテゴリ（数学のみ） */}
       {subject && (MATH_SUBJECTS as readonly string[]).includes(subject) && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">伸ばしたい分野</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">伸ばせる分野</label>
           <div className="flex flex-wrap gap-2">
             {MATH_CATEGORIES.map(c => (
               <button
@@ -227,7 +227,7 @@ export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
       {/* 理科カテゴリ（理科のみ） */}
       {subject && (SCIENCE_SUBJECTS as readonly string[]).includes(subject) && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">伸ばしたい分野</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">伸ばせる分野</label>
           <div className="flex flex-wrap gap-2">
             {SCIENCE_CATEGORIES.map(c => (
               <button
