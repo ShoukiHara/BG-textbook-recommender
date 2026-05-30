@@ -259,31 +259,20 @@ function ReviewManager({ token }: { token: string }) {
   return (
     <section className="mb-10">
       <h2 className="text-lg font-semibold text-gray-800 mb-4">レビュー管理</h2>
-      <div className="mb-3 flex flex-wrap gap-2">
-        {SUBJECTS.map(s => (
-          <button
-            key={s}
-            onClick={() => {
-              setSelectedSubject(prev => prev === s ? '' : s)
-              setSelectedBookId('')
-              setEditingId(null)
-            }}
-            className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-              selectedSubject === s
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
-            }`}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
-
       <div className="mb-4 flex flex-wrap gap-3">
         <div>
-          <label className="block text-xs text-gray-500 mb-1">
-            参考書{selectedSubject ? `（${selectedSubject}）` : ''}
-          </label>
+          <label className="block text-xs text-gray-500 mb-1">科目</label>
+          <select
+            value={selectedSubject}
+            onChange={e => { setSelectedSubject(e.target.value); setSelectedBookId(''); setEditingId(null) }}
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm w-36"
+          >
+            <option value="">すべて</option>
+            {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">参考書</label>
           <select
             value={selectedBookId}
             onChange={e => { setSelectedBookId(e.target.value); setEditingId(null) }}
