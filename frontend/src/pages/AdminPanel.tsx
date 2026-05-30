@@ -5,7 +5,7 @@ import {
   updateReview, deleteReview, createInstructor, updateInstructor, deleteInstructor,
   login, generateAllGuides, fetchAIFeedbackList, fetchAIFeedbackSummary,
 } from '../lib/api'
-import { LAYERS, SUBJECTS } from '../lib/constants'
+import { LAYERS, SUBJECTS, ENGLISH_CATEGORIES, MATH_CATEGORIES, MATH_SUBJECTS, SCIENCE_CATEGORIES, SCIENCE_SUBJECTS } from '../lib/constants'
 
 const currentYear = new Date().getFullYear()
 const ENROLLMENT_YEARS = [
@@ -24,12 +24,14 @@ type EditFields = {
   period: string; before_connection: string; after_connection: string; usage_feel: string
   explanation_quality: string; problem_volume: string; target_deviation: string
   completion_period: string; self_study_suitability: string; strengthens_weaknesses: string
+  english_category: string; math_category: string; science_category: string
 }
 
 const EMPTY_EDIT_FIELDS: EditFields = {
   period: '', before_connection: '', after_connection: '', usage_feel: '',
   explanation_quality: '', problem_volume: '', target_deviation: '',
   completion_period: '', self_study_suitability: '', strengthens_weaknesses: '',
+  english_category: '', math_category: '', science_category: '',
 }
 
 const SELECT_OPTIONS = [
@@ -51,31 +53,112 @@ const TEXT_FIELDS = [
 // ----------------------------------------------------------------
 
 function ReviewEditForm({
-  reviewId, layer, rating, fields,
+  reviewId, subject, layer, rating, fields,
   onLayerChange, onRatingChange, onFieldChange, onSave, onCancel,
 }: {
   reviewId: string
+  subject: string
   layer: number; rating: number; fields: EditFields
   onLayerChange: (v: number) => void
   onRatingChange: (v: number) => void
   onFieldChange: (key: keyof EditFields, value: string) => void
   onSave: () => void; onCancel: () => void
 }) {
+  const toggleCategory = (
+    current: string,
+    value: string,
+    fieldKey: keyof EditFields,
+  ) => {
+    const list = current ? current.split(',') : []
+    const next = list.includes(value)
+      ? list.filter(v => v !== value)
+      : list.length < 2 ? [...list, value] : list
+    onFieldChange(fieldKey, next.join(','))
+  }
+
+  const englishCats = fields.english_category ? fields.english_category.split(',') : []
+  const mathCats = fields.math_category ? fields.math_category.split(',') : []
+  const scienceCats = fields.science_category ? fields.science_category.split(',') : []
+
   return (
     <div className="space-y-4">
-      <div className="flex gap-4 items-end">
-        <div>
-          <label className="block text-xs text-gray-600 mb-1">レイヤー</label>
-          <select value={layer} onChange={e => onLayerChange(Number(e.target.value))} className="border rounded px-2 py-1 text-sm">
-            {Object.entries(LAYERS).map(([k, v]) => <option key={k} value={k}>{k}: {v}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs text-gray-600 mb-1">評価</label>
-          <StarRating value={rating} onChange={onRatingChange} />
+      {/* レイヤー + 評価 */}
+      <div>
+        <label className="block text-xs text-gray-600 mb-2">対象レイヤー</label>
+        <div className="space-y-2">
+          {Object.entries(LAYERS).map(([k, v]) => {
+            const l = Number(k)
+            const checked = layer === l
+            return (
+              <div key={k} className="flex items-center gap-3">
+                <label className="flex items-center gap-2 cursor-pointer min-w-[240px]">
+                  <input type="radio" name={`layer_${reviewId}`} checked={checked}
+                    onChange={() => onLayerChange(l)}
+                    className="accent-blue-600 w-4 h-4"
+                  />
+                  <span className="text-sm">{k}: {v}</span>
+                </label>
+                {checked && <StarRating value={rating} onChange={onRatingChange} />}
+              </div>
+            )
+          })}
         </div>
       </div>
 
+      {/* 伸ばせる分野 */}
+      {subject === '英語' && (
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">伸ばせる分野<span className="text-xs text-gray-400 ml-1">（2つまで）</span></label>
+          <div className="flex flex-wrap gap-2">
+            {ENGLISH_CATEGORIES.map(c => (
+              <button key={c} type="button"
+                onClick={() => toggleCategory(fields.english_category, c, 'english_category')}
+                className={`px-3 py-1 rounded-full text-xs border transition-colors ${
+                  englishCats.includes(c) ? 'bg-blue-600 text-white border-blue-600'
+                  : englishCats.length >= 2 ? 'bg-white text-gray-300 border-gray-200 cursor-not-allowed'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                }`}
+              >{c}</button>
+            ))}
+          </div>
+        </div>
+      )}
+      {(MATH_SUBJECTS as readonly string[]).includes(subject) && (
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">伸ばせる分野<span className="text-xs text-gray-400 ml-1">（2つまで）</span></label>
+          <div className="flex flex-wrap gap-2">
+            {MATH_CATEGORIES.map(c => (
+              <button key={c} type="button"
+                onClick={() => toggleCategory(fields.math_category, c, 'math_category')}
+                className={`px-3 py-1 rounded-full text-xs border transition-colors ${
+                  mathCats.includes(c) ? 'bg-blue-600 text-white border-blue-600'
+                  : mathCats.length >= 2 ? 'bg-white text-gray-300 border-gray-200 cursor-not-allowed'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                }`}
+              >{c}</button>
+            ))}
+          </div>
+        </div>
+      )}
+      {(SCIENCE_SUBJECTS as readonly string[]).includes(subject) && (
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">伸ばせる分野<span className="text-xs text-gray-400 ml-1">（2つまで）</span></label>
+          <div className="flex flex-wrap gap-2">
+            {SCIENCE_CATEGORIES.map(c => (
+              <button key={c} type="button"
+                onClick={() => toggleCategory(fields.science_category, c, 'science_category')}
+                className={`px-3 py-1 rounded-full text-xs border transition-colors ${
+                  scienceCats.includes(c) ? 'bg-blue-600 text-white border-blue-600'
+                  : scienceCats.length >= 2 ? 'bg-white text-gray-300 border-gray-200 cursor-not-allowed'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                }`}
+              >{c}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 参考書の特徴（選択式） */}
       <div className="grid grid-cols-2 gap-3">
         {SELECT_OPTIONS.map(({ key, label, options }) => (
           <div key={key}>
@@ -256,6 +339,7 @@ function ReviewManager({ token }: { token: string }) {
       explanation_quality: r.explanation_quality, problem_volume: r.problem_volume,
       target_deviation: r.target_deviation, completion_period: r.completion_period,
       self_study_suitability: r.self_study_suitability, strengthens_weaknesses: r.strengthens_weaknesses,
+      english_category: r.english_category, math_category: r.math_category, science_category: r.science_category,
     })
   }
 
@@ -320,6 +404,7 @@ function ReviewManager({ token }: { token: string }) {
               {editingId === r.id ? (
                 <ReviewEditForm
                   reviewId={r.id}
+                  subject={r.subject}
                   layer={editLayer} rating={editRating} fields={editFields}
                   onLayerChange={setEditLayer}
                   onRatingChange={setEditRating}

@@ -17,6 +17,7 @@ export interface Review {
   id: string
   instructor_name: string
   book_title: string
+  subject: string
   layer: number
   rating: number
   period: string
@@ -29,6 +30,9 @@ export interface Review {
   target_deviation: string
   completion_period: string
   self_study_suitability: string
+  english_category: string
+  math_category: string
+  science_category: string
   created_at: string
 }
 
@@ -128,6 +132,9 @@ export const updateReview = (reviewId: string, data: Partial<{
   target_deviation: string
   completion_period: string
   self_study_suitability: string
+  english_category: string
+  math_category: string
+  science_category: string
 }>, token: string) =>
   apiClient.patch<Review>(`/api/v1/reviews/${reviewId}`, data, {
     headers: { Authorization: `Bearer ${token}` },

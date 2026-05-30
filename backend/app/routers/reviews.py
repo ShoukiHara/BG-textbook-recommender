@@ -12,9 +12,11 @@ router = APIRouter(tags=["reviews"])
 
 
 async def _get_reviews_with_names(db: AsyncSession, book_id: UUID) -> list[ReviewOut]:
+    from app.models import Book as BookModel
     stmt = (
-        select(Review, func.coalesce(Instructor.name, literal("匿名")).label("instructor_name"))
+        select(Review, func.coalesce(Instructor.name, literal("匿名")).label("instructor_name"), BookModel.subject.label("book_subject"))
         .outerjoin(Instructor, Review.instructor_id == Instructor.id)
+        .join(BookModel, Review.book_id == BookModel.id)
         .where(Review.book_id == book_id)
         .order_by(Review.created_at.desc())
     )
@@ -23,6 +25,7 @@ async def _get_reviews_with_names(db: AsyncSession, book_id: UUID) -> list[Revie
         ReviewOut(
             id=row.Review.id,
             instructor_name=row.instructor_name,
+            subject=row.book_subject,
             layer=row.Review.layer,
             rating=row.Review.rating,
             period=row.Review.period,
@@ -81,6 +84,7 @@ async def list_reviews_filtered(
             id=row.Review.id,
             instructor_name=row.instructor_name,
             book_title=row.book_title,
+            subject=row.Book.subject,
             layer=row.Review.layer,
             rating=row.Review.rating,
             period=row.Review.period,

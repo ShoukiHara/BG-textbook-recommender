@@ -65,6 +65,7 @@ class ReviewOut(BaseModel):
     id: UUID4
     instructor_name: str
     book_title: str = ""
+    subject: str = ""
     layer: int
     rating: int
     period: str
