@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  fetchReviews, fetchReviewsFiltered, fetchBooks, fetchInstructors,
+  fetchReviewsFiltered, fetchBooks, fetchInstructors,
   updateReview, deleteReview, createReview, createInstructor, updateInstructor, deleteInstructor,
   login, generateAllGuides, fetchAIFeedbackList, fetchAIFeedbackSummary,
 } from '../lib/api'
@@ -316,16 +316,6 @@ function ReviewManager({ token }: { token: string }) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editLayerRatings, setEditLayerRatings] = useState<Record<number, number>>({})
   const [editFields, setEditFields] = useState<EditFields>(EMPTY_EDIT_FIELDS)
-  const [editingReview, setEditingReview] = useState<Review | null>(null)
-
-  const updateMut = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof updateReview>[1] }) =>
-      updateReview(id, data, token),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['reviews-filtered'] })
-      setEditingId(null)
-    },
-  })
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteReview(id, token),
@@ -334,7 +324,6 @@ function ReviewManager({ token }: { token: string }) {
 
   const startEdit = (r: Review) => {
     setEditingId(r.id)
-    setEditingReview(r)
     setEditLayerRatings({ [r.layer]: r.rating })
     setEditFields({
       period: r.period, before_connection: r.before_connection,
@@ -347,20 +336,29 @@ function ReviewManager({ token }: { token: string }) {
   }
 
   const handleSave = async (r: Review) => {
-    const layers = Object.entries(editLayerRatings)
-    if (layers.length === 0) return
+    const entries = Object.entries(editLayerRatings)
+    if (entries.length === 0) return
     try {
-      const [[firstLayer, firstRating], ...rest] = layers
-      await updateReview(r.id, { layer: Number(firstLayer), rating: firstRating, ...editFields }, token)
-      if (rest.length > 0 && r.instructor_id) {
+      // 元のレコードのレイヤーが引き続き選択されていればそのまま更新、そうでなければ最初の選択を使う
+      const originalEntry = entries.find(([l]) => Number(l) === r.layer)
+      const [primaryLayer, primaryRating] = originalEntry ?? entries[0]
+      const additionalEntries = entries.filter(([l]) => Number(l) !== Number(primaryLayer))
+
+      await updateReview(r.id, {
+        layer: Number(primaryLayer),
+        rating: Number(primaryRating),
+        ...editFields,
+      }, token)
+
+      if (additionalEntries.length > 0 && r.instructor_id) {
         await createReview(r.book_id, {
           instructor_id: r.instructor_id,
-          layer_ratings: rest.map(([l, rt]) => ({ layer: Number(l), rating: Number(rt) })),
+          layer_ratings: additionalEntries.map(([l, rt]) => ({ layer: Number(l), rating: Number(rt) })),
           ...editFields,
         })
       }
-      await qc.invalidateQueries({ queryKey: ['reviews-filtered'] })
     } finally {
+      await qc.invalidateQueries({ queryKey: ['reviews-filtered'] })
       setEditingId(null)
     }
   }
