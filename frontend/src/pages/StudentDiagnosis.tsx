@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { diagnose, fetchRanking } from '../lib/api'
+import { diagnose, fetchRanking, fetchBooks } from '../lib/api'
 import BookCardList from '../components/BookCardList'
 import DiagnosisFeedbackForm from '../components/DiagnosisFeedbackForm'
 import { SUBJECTS, LAYERS, GRADES, ENGLISH_CATEGORIES, MATH_CATEGORIES, MATH_SUBJECTS, getSubjectCategory } from '../lib/constants'
@@ -41,6 +41,7 @@ export default function StudentDiagnosis() {
     math_weak_areas: [] as string[],
   })
   const [mockScores, setMockScores] = useState<{ exam: string; deviation: string }[]>([{ exam: '', deviation: '' }])
+  const [bookHistory, setBookHistory] = useState<{ status: string; bookName: string }[]>([{ status: '完了', bookName: '' }])
 
   const updateMockScore = (i: number, key: 'exam' | 'deviation', value: string) => {
     setMockScores(prev => {
@@ -54,6 +55,30 @@ export default function StudentDiagnosis() {
   }
 
   const addMockScore = () => setMockScores(prev => [...prev, { exam: '', deviation: '' }])
+
+  const updateBookHistory = (i: number, key: 'status' | 'bookName', value: string) => {
+    setBookHistory(prev => {
+      const next = prev.map((b, idx) => idx === i ? { ...b, [key]: value } : b)
+      const text = next.filter(b => b.bookName.trim())
+        .map(b => `【${b.status}】${b.bookName.trim()}`)
+        .join('\n')
+      setAiForm(f => ({ ...f, books_history: text }))
+      return next
+    })
+  }
+
+  const addBookHistory = () => setBookHistory(prev => [...prev, { status: '完了', bookName: '' }])
+
+  const removeBookHistory = (i: number) => {
+    setBookHistory(prev => {
+      const next = prev.filter((_, idx) => idx !== i)
+      const text = next.filter(b => b.bookName.trim())
+        .map(b => `【${b.status}】${b.bookName.trim()}`)
+        .join('\n')
+      setAiForm(f => ({ ...f, books_history: text }))
+      return next
+    })
+  }
 
   const removeMockScore = (i: number) => {
     setMockScores(prev => {
@@ -79,6 +104,14 @@ export default function StudentDiagnosis() {
   useEffect(() => {
     sessionStorage.setItem(SS_KEY, JSON.stringify({ version: SS_VERSION, tab, aiForm, diagResult, manualSubject, manualLayer }))
   }, [tab, aiForm, diagResult, manualSubject, manualLayer])
+
+  // AI診断タブ: 科目の参考書一覧（書籍選択用）
+  const { data: subjectBooks = [] } = useQuery({
+    queryKey: ['books', { subject: aiForm.subject }],
+    queryFn: () => fetchBooks({ subject: aiForm.subject }),
+    enabled: tab === 'ai',
+    staleTime: 10 * 60 * 1000,
+  })
 
   // 手動タブ用ランキング
   const { data: ranking = [], isFetching: rankingLoading } = useQuery({
@@ -228,16 +261,47 @@ export default function StudentDiagnosis() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               これまで使用してきた参考書と現在使用している参考書
             </label>
-            <textarea
-              value={aiForm.books_history}
-              onChange={e => setAiForm(f => ({ ...f, books_history: e.target.value }))}
-              placeholder={'例: 【完了】システム英単語、NextStage\n【使用中】ポレポレ英文読解'}
-              rows={3}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm resize-none"
-            />
+            <div className="space-y-2">
+              {bookHistory.map((bh, i) => (
+                <div key={i} className="flex gap-2 items-center">
+                  <select
+                    value={bh.status}
+                    onChange={e => updateBookHistory(i, 'status', e.target.value)}
+                    className="border border-gray-300 rounded-md px-2 py-2 text-sm w-24 shrink-0"
+                  >
+                    <option value="完了">完了</option>
+                    <option value="使用中">使用中</option>
+                  </select>
+                  <input
+                    list={`books-list-${i}`}
+                    value={bh.bookName}
+                    onChange={e => updateBookHistory(i, 'bookName', e.target.value)}
+                    placeholder="参考書名を入力または選択"
+                    className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  />
+                  <datalist id={`books-list-${i}`}>
+                    {subjectBooks.map(b => (
+                      <option key={b.id} value={b.title} />
+                    ))}
+                  </datalist>
+                  {bookHistory.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeBookHistory(i)}
+                      className="text-gray-400 hover:text-red-500 text-lg leading-none shrink-0"
+                    >×</button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addBookHistory}
+                className="text-sm text-blue-600 hover:text-blue-700"
+              >＋ 参考書を追加</button>
+            </div>
           </div>
 
           <div>
