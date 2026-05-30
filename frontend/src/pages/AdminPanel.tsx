@@ -346,9 +346,34 @@ function ReviewManager({ token }: { token: string }) {
     const entries = Object.entries(editLayerRatings)
     if (entries.length === 0) return
     setSaveError(null)
-    // デバッグ: 選択中のレイヤー状態を表示
-    setSaveError(`DEBUG: layers=${JSON.stringify(editLayerRatings)}, instructor_id=${r.instructor_id}, book_id=${r.book_id}`)
-    return
+    try {
+      const originalEntry = entries.find(([l]) => Number(l) === r.layer)
+      const [primaryLayer, primaryRating] = originalEntry ?? entries[0]
+      const additionalEntries = entries.filter(([l]) => Number(l) !== Number(primaryLayer))
+
+      await updateReview(r.id, {
+        layer: Number(primaryLayer),
+        rating: Number(primaryRating),
+        ...editFields,
+      }, token)
+
+      for (const [l, rt] of additionalEntries) {
+        const url = `/api/v1/books/${r.book_id}/reviews`
+        setSaveError(`DEBUG POST: url=${url}, instructor_id=${r.instructor_id}, layer=${l}`)
+        await createReview(r.book_id, {
+          instructor_id: r.instructor_id ?? '',
+          layer_ratings: [{ layer: Number(l), rating: Number(rt) }],
+          ...editFields,
+        })
+      }
+
+      await qc.invalidateQueries({ queryKey: ['reviews-filtered'] })
+      setEditingId(null)
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setSaveError(`保存エラー: ${msg}`)
+      await qc.invalidateQueries({ queryKey: ['reviews-filtered'] })
+    }
   }
 
   return (
