@@ -235,12 +235,15 @@ function ReviewManager({ token }: { token: string }) {
   const updateMut = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Parameters<typeof updateReview>[1] }) =>
       updateReview(id, data, token),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['reviews'] }); setEditingId(null) },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['reviews-filtered'] })
+      setEditingId(null)
+    },
   })
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteReview(id, token),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['reviews'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['reviews-filtered'] }),
   })
 
   const startEdit = (r: Review) => {
