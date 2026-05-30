@@ -403,26 +403,25 @@ function ReviewManager({ token }: { token: string }) {
       const existingByLayer = new Map(group.reviews.map(r => [r.layer, r]))
       const selectedLayers = new Set(entries.map(([l]) => Number(l)))
 
-      // 既存レイヤー → 更新、新規レイヤー → 作成
-      for (const [lStr, rt] of entries) {
-        const l = Number(lStr)
-        const existing = existingByLayer.get(l)
-        if (existing) {
-          await updateReview(existing.id, { layer: l, rating: Number(rt), ...editFields }, token)
-        } else {
-          await adminCreateReviews({
-            book_id: group.book_id,
-            instructor_id: group.instructor_id,
-            layer_ratings: [{ layer: l, rating: Number(rt) }],
-            ...editFields,
-          }, token)
-        }
-      }
-
-      // チェックを外したレイヤー → 削除
-      for (const [layer, r] of existingByLayer) {
-        if (!selectedLayers.has(layer)) await deleteReview(r.id, token)
-      }
+      await Promise.all([
+        // 既存レイヤー → 更新、新規レイヤー → 作成（並列）
+        ...entries.map(([lStr, rt]) => {
+          const l = Number(lStr)
+          const existing = existingByLayer.get(l)
+          return existing
+            ? updateReview(existing.id, { layer: l, rating: Number(rt), ...editFields }, token)
+            : adminCreateReviews({
+                book_id: group.book_id,
+                instructor_id: group.instructor_id,
+                layer_ratings: [{ layer: l, rating: Number(rt) }],
+                ...editFields,
+              }, token)
+        }),
+        // チェックを外したレイヤー → 削除（並列）
+        ...[...existingByLayer.entries()]
+          .filter(([layer]) => !selectedLayers.has(layer))
+          .map(([, r]) => deleteReview(r.id, token)),
+      ])
 
       await qc.invalidateQueries({ queryKey: ['reviews-filtered'] })
       setEditingKey(null)
