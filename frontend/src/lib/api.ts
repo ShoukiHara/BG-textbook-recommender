@@ -15,6 +15,8 @@ export interface Book {
 
 export interface Review {
   id: string
+  book_id: string
+  instructor_id: string | null
   instructor_name: string
   book_title: string
   subject: string

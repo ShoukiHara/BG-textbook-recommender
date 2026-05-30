@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   fetchReviews, fetchReviewsFiltered, fetchBooks, fetchInstructors,
-  updateReview, deleteReview, createInstructor, updateInstructor, deleteInstructor,
+  updateReview, deleteReview, createReview, createInstructor, updateInstructor, deleteInstructor,
   login, generateAllGuides, fetchAIFeedbackList, fetchAIFeedbackSummary,
 } from '../lib/api'
 import { LAYERS, SUBJECTS, ENGLISH_CATEGORIES, MATH_CATEGORIES, MATH_SUBJECTS, SCIENCE_CATEGORIES, SCIENCE_SUBJECTS } from '../lib/constants'
@@ -53,15 +53,16 @@ const TEXT_FIELDS = [
 // ----------------------------------------------------------------
 
 function ReviewEditForm({
-  reviewId, subject, layer, rating, fields,
-  onLayerChange, onRatingChange, onFieldChange, onSave, onCancel,
+  reviewId, subject, layerRatings, fields,
+  onLayerToggle, onRatingChange, onFieldChange, onSave, onCancel,
 }: {
   reviewId: string
   subject: string
-  layer: number; rating: number; fields: EditFields
-  onLayerChange: (v: number) => void
-  onRatingChange: (v: number) => void
+  layerRatings: Record<number, number>
+  onLayerToggle: (layer: number, checked: boolean) => void
+  onRatingChange: (layer: number, rating: number) => void
   onFieldChange: (key: keyof EditFields, value: string) => void
+  fields: EditFields
   onSave: () => void; onCancel: () => void
 }) {
   const toggleCategory = (
@@ -82,23 +83,25 @@ function ReviewEditForm({
 
   return (
     <div className="space-y-4">
-      {/* レイヤー + 評価 */}
+      {/* レイヤー + 評価（複数選択可） */}
       <div>
-        <label className="block text-xs text-gray-600 mb-2">対象レイヤー</label>
+        <label className="block text-xs text-gray-600 mb-2">対象レイヤー（複数選択可）</label>
         <div className="space-y-2">
           {Object.entries(LAYERS).map(([k, v]) => {
             const l = Number(k)
-            const checked = layer === l
+            const checked = l in layerRatings
             return (
               <div key={k} className="flex items-center gap-3">
                 <label className="flex items-center gap-2 cursor-pointer min-w-[240px]">
-                  <input type="radio" name={`layer_${reviewId}`} checked={checked}
-                    onChange={() => onLayerChange(l)}
+                  <input type="checkbox" checked={checked}
+                    onChange={e => onLayerToggle(l, e.target.checked)}
                     className="accent-blue-600 w-4 h-4"
                   />
                   <span className="text-sm">{k}: {v}</span>
                 </label>
-                {checked && <StarRating value={rating} onChange={onRatingChange} />}
+                {checked && (
+                  <StarRating value={layerRatings[l]} onChange={r => onRatingChange(l, r)} />
+                )}
               </div>
             )
           })}
@@ -311,9 +314,9 @@ function ReviewManager({ token }: { token: string }) {
   })
 
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editLayer, setEditLayer] = useState(1)
-  const [editRating, setEditRating] = useState(0)
+  const [editLayerRatings, setEditLayerRatings] = useState<Record<number, number>>({})
   const [editFields, setEditFields] = useState<EditFields>(EMPTY_EDIT_FIELDS)
+  const [editingReview, setEditingReview] = useState<Review | null>(null)
 
   const updateMut = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Parameters<typeof updateReview>[1] }) =>
@@ -331,8 +334,8 @@ function ReviewManager({ token }: { token: string }) {
 
   const startEdit = (r: Review) => {
     setEditingId(r.id)
-    setEditLayer(r.layer)
-    setEditRating(r.rating)
+    setEditingReview(r)
+    setEditLayerRatings({ [r.layer]: r.rating })
     setEditFields({
       period: r.period, before_connection: r.before_connection,
       after_connection: r.after_connection, usage_feel: r.usage_feel,
@@ -341,6 +344,24 @@ function ReviewManager({ token }: { token: string }) {
       self_study_suitability: r.self_study_suitability, strengthens_weaknesses: r.strengthens_weaknesses,
       english_category: r.english_category, math_category: r.math_category, science_category: r.science_category,
     })
+  }
+
+  const handleSave = async (r: Review) => {
+    const layers = Object.entries(editLayerRatings)
+    if (layers.length === 0) return
+    // 現在のレコードを最初のレイヤーで更新
+    const [[firstLayer, firstRating], ...rest] = layers
+    await updateReview(r.id, { layer: Number(firstLayer), rating: firstRating, ...editFields }, token)
+    // 追加レイヤーは新規レコードとして作成（instructor_id がある場合のみ）
+    if (rest.length > 0 && r.instructor_id) {
+      await createReview(r.book_id, {
+        instructor_id: r.instructor_id,
+        layer_ratings: rest.map(([l, rt]) => ({ layer: Number(l), rating: rt })),
+        ...editFields,
+      })
+    }
+    qc.invalidateQueries({ queryKey: ['reviews-filtered'] })
+    setEditingId(null)
   }
 
   return (
@@ -405,11 +426,21 @@ function ReviewManager({ token }: { token: string }) {
                 <ReviewEditForm
                   reviewId={r.id}
                   subject={r.subject}
-                  layer={editLayer} rating={editRating} fields={editFields}
-                  onLayerChange={setEditLayer}
-                  onRatingChange={setEditRating}
+                  layerRatings={editLayerRatings}
+                  fields={editFields}
+                  onLayerToggle={(layer, checked) =>
+                    setEditLayerRatings(prev => {
+                      const next = { ...prev }
+                      if (checked) next[layer] = 0
+                      else delete next[layer]
+                      return next
+                    })
+                  }
+                  onRatingChange={(layer, rating) =>
+                    setEditLayerRatings(prev => ({ ...prev, [layer]: rating }))
+                  }
                   onFieldChange={(key, value) => setEditFields(f => ({ ...f, [key]: value }))}
-                  onSave={() => updateMut.mutate({ id: r.id, data: { layer: editLayer, rating: editRating, ...editFields } })}
+                  onSave={() => handleSave(r)}
                   onCancel={() => setEditingId(null)}
                 />
               ) : (

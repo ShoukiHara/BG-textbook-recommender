@@ -63,6 +63,8 @@ class ReviewUpdate(BaseModel):
 
 class ReviewOut(BaseModel):
     id: UUID4
+    book_id: UUID4
+    instructor_id: UUID4 | None = None
     instructor_name: str
     book_title: str = ""
     subject: str = ""

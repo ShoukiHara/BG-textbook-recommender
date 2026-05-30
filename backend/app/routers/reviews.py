@@ -24,6 +24,8 @@ async def _get_reviews_with_names(db: AsyncSession, book_id: UUID) -> list[Revie
     return [
         ReviewOut(
             id=row.Review.id,
+            book_id=row.Review.book_id,
+            instructor_id=row.Review.instructor_id,
             instructor_name=row.instructor_name,
             subject=row.book_subject,
             layer=row.Review.layer,
@@ -82,6 +84,8 @@ async def list_reviews_filtered(
     return [
         ReviewOut(
             id=row.Review.id,
+            book_id=row.Review.book_id,
+            instructor_id=row.Review.instructor_id,
             instructor_name=row.instructor_name,
             book_title=row.book_title,
             subject=row.book_subject,
