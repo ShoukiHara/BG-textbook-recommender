@@ -69,7 +69,7 @@ async def list_reviews_filtered(
     _: None = Depends(require_admin),
 ):
     stmt = (
-        select(Review, func.coalesce(Instructor.name, literal("匿名")).label("instructor_name"), Book.title.label("book_title"))
+        select(Review, func.coalesce(Instructor.name, literal("匿名")).label("instructor_name"), Book.title.label("book_title"), Book.subject.label("book_subject"))
         .outerjoin(Instructor, Review.instructor_id == Instructor.id)
         .join(Book, Review.book_id == Book.id)
         .order_by(Review.created_at.desc())
@@ -84,7 +84,7 @@ async def list_reviews_filtered(
             id=row.Review.id,
             instructor_name=row.instructor_name,
             book_title=row.book_title,
-            subject=row.Book.subject,
+            subject=row.book_subject,
             layer=row.Review.layer,
             rating=row.Review.rating,
             period=row.Review.period,
