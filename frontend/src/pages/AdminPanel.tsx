@@ -208,8 +208,13 @@ function ReviewManager({ token }: { token: string }) {
     queryKey: ['instructors'], queryFn: fetchInstructors, staleTime: 5 * 60 * 1000,
   })
 
+  const [selectedSubject, setSelectedSubject] = useState('')
   const [selectedBookId, setSelectedBookId] = useState('')
   const [selectedInstructorId, setSelectedInstructorId] = useState('')
+
+  const filteredBooks = selectedSubject
+    ? (books as Book[]).filter(b => b.subject === selectedSubject)
+    : (books as Book[])
 
   const enabled = !!selectedBookId || !!selectedInstructorId
   const { data: reviews = [], isLoading } = useQuery({
@@ -254,17 +259,41 @@ function ReviewManager({ token }: { token: string }) {
   return (
     <section className="mb-10">
       <h2 className="text-lg font-semibold text-gray-800 mb-4">レビュー管理</h2>
+      <div className="mb-3 flex flex-wrap gap-2">
+        {SUBJECTS.map(s => (
+          <button
+            key={s}
+            onClick={() => {
+              setSelectedSubject(prev => prev === s ? '' : s)
+              setSelectedBookId('')
+              setEditingId(null)
+            }}
+            className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+              selectedSubject === s
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+            }`}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+
       <div className="mb-4 flex flex-wrap gap-3">
         <div>
-          <label className="block text-xs text-gray-500 mb-1">参考書</label>
+          <label className="block text-xs text-gray-500 mb-1">
+            参考書{selectedSubject ? `（${selectedSubject}）` : ''}
+          </label>
           <select
             value={selectedBookId}
             onChange={e => { setSelectedBookId(e.target.value); setEditingId(null) }}
             className="border border-gray-300 rounded-md px-3 py-2 text-sm w-64"
           >
             <option value="">すべて</option>
-            {(books as Book[]).map(b => (
-              <option key={b.id} value={b.id}>{b.title}（{b.subject}）</option>
+            {filteredBooks.map(b => (
+              <option key={b.id} value={b.id}>
+                {b.title}{!selectedSubject ? `（${b.subject}）` : ''}
+              </option>
             ))}
           </select>
         </div>
@@ -281,10 +310,10 @@ function ReviewManager({ token }: { token: string }) {
             ))}
           </select>
         </div>
-        {(selectedBookId || selectedInstructorId) && (
+        {(selectedSubject || selectedBookId || selectedInstructorId) && (
           <div className="flex items-end">
             <button
-              onClick={() => { setSelectedBookId(''); setSelectedInstructorId(''); setEditingId(null) }}
+              onClick={() => { setSelectedSubject(''); setSelectedBookId(''); setSelectedInstructorId(''); setEditingId(null) }}
               className="text-xs text-gray-400 hover:text-gray-600 border border-gray-200 rounded px-2 py-1.5"
             >クリア</button>
           </div>
