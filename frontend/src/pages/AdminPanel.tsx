@@ -35,7 +35,7 @@ const EMPTY_EDIT_FIELDS: EditFields = {
 const SELECT_OPTIONS = [
   { key: 'explanation_quality', label: '解説の充実度', options: ['丁寧', '標準', 'シンプル'] },
   { key: 'problem_volume',      label: '問題量',       options: ['多い', '標準', '少ない'] },
-  { key: 'target_deviation',    label: '対象偏差値帯', options: ['〜50', '50〜60', '60〜65', '65〜70', '70〜'] },
+  { key: 'target_deviation',    label: '対象偏差値帯（駿台模試準拠）', options: ['〜50', '50〜60', '60〜65', '65〜70', '70〜'] },
   { key: 'completion_period',   label: '完了期間',     options: ['2週間', '1ヶ月', '2〜3ヶ月', '3ヶ月以上'] },
 ] as const
 
