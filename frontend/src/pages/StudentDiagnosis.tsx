@@ -143,21 +143,50 @@ export default function StudentDiagnosis() {
             </div>
           </div>
 
-          {[
-            { key: 'target_department', label: '志望校学部学科', placeholder: '例: 京都大学 理学部 数学系' },
-            { key: 'mock_score', label: '現在の模試成績', placeholder: '例: 偏差値65、河合塾全統模試' },
-          ].map(({ key, label, placeholder }) => (
-            <div key={key}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-              <input
-                type="text"
-                value={aiForm[key as keyof typeof aiForm]}
-                onChange={e => setAiForm(f => ({ ...f, [key]: e.target.value }))}
-                placeholder={placeholder}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-              />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">志望校学部学科</label>
+            <input
+              type="text"
+              value={aiForm.target_department}
+              onChange={e => setAiForm(f => ({ ...f, target_department: e.target.value }))}
+              placeholder="例: 京都大学 理学部 数学系"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">現在の模試成績</label>
+            <div className="flex gap-2">
+              <select
+                value={aiForm.mock_score.split(' ')[0] ?? ''}
+                onChange={e => {
+                  const deviation = aiForm.mock_score.split(' ')[1] ?? ''
+                  setAiForm(f => ({ ...f, mock_score: e.target.value ? `${e.target.value} ${deviation}`.trim() : '' }))
+                }}
+                className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
+              >
+                <option value="">模試を選択</option>
+                {['駿台全国模試', '河合全統模試', '進研模試', '東進共通テスト本番レベル模試'].map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+              <div className="flex items-center gap-1">
+                <span className="text-sm text-gray-500 whitespace-nowrap">偏差値</span>
+                <input
+                  type="number"
+                  min={20}
+                  max={100}
+                  value={aiForm.mock_score.split(' ')[1] ?? ''}
+                  onChange={e => {
+                    const exam = aiForm.mock_score.split(' ')[0] ?? ''
+                    setAiForm(f => ({ ...f, mock_score: exam ? `${exam} ${e.target.value}`.trim() : e.target.value }))
+                  }}
+                  placeholder="65"
+                  className="w-20 border border-gray-300 rounded-md px-3 py-2 text-sm"
+                />
+              </div>
             </div>
-          ))}
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
