@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import StarRating from './StarRating'
-import { LAYERS, ENGLISH_CATEGORIES, MATH_CATEGORIES, MATH_SUBJECTS } from '../lib/constants'
+import { LAYERS, ENGLISH_CATEGORIES, MATH_CATEGORIES, MATH_SUBJECTS, SCIENCE_CATEGORIES, SCIENCE_SUBJECTS } from '../lib/constants'
 import type { Instructor } from '../lib/api'
 
 interface Props {
@@ -22,6 +22,7 @@ interface Props {
     self_study_suitability: string
     english_category: string
     math_category: string
+    science_category: string
   }) => Promise<void>
 }
 
@@ -59,6 +60,7 @@ export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
   const [strengthens, setStrengthens] = useState('')
   const [englishCategory, setEnglishCategory] = useState('')
   const [mathCategory, setMathCategory] = useState('')
+  const [scienceCategory, setScienceCategory] = useState('')
 
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -99,6 +101,7 @@ export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
         self_study_suitability: selfStudy,
         english_category: englishCategory,
         math_category: mathCategory,
+        science_category: scienceCategory,
       })
       setSuccess(true)
       setLayerRatings({})
@@ -108,6 +111,7 @@ export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
       setStrengthens('')
       setEnglishCategory('')
       setMathCategory('')
+      setScienceCategory('')
     } catch {
       setError('投稿に失敗しました。再度お試しください。')
     } finally {
@@ -200,7 +204,7 @@ export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
       {/* 数学カテゴリ（数学のみ） */}
       {subject && (MATH_SUBJECTS as readonly string[]).includes(subject) && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">どの苦手に効くか</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">伸ばしたい分野</label>
           <div className="flex flex-wrap gap-2">
             {MATH_CATEGORIES.map(c => (
               <button
@@ -209,6 +213,29 @@ export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
                 onClick={() => setMathCategory(prev => prev === c ? '' : c)}
                 className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
                   mathCategory === c
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 理科カテゴリ（理科のみ） */}
+      {subject && (SCIENCE_SUBJECTS as readonly string[]).includes(subject) && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">伸ばしたい分野</label>
+          <div className="flex flex-wrap gap-2">
+            {SCIENCE_CATEGORIES.map(c => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setScienceCategory(prev => prev === c ? '' : c)}
+                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                  scienceCategory === c
                     ? 'bg-blue-600 text-white border-blue-600'
                     : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
                 }`}

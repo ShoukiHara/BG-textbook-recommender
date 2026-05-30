@@ -24,9 +24,19 @@ export const MATH_CATEGORIES = [
 
 export const MATH_SUBJECTS = ["文系数学", "理系数学"] as const
 
-export function getSubjectCategory(subject: string): 'english' | 'math' | null {
+export const SCIENCE_CATEGORIES = [
+  "教科書的知識",
+  "共通テスト・私大標準レベルの得点力",
+  "国公立2次レベルの得点力",
+  "難関国立大レベルの得点力",
+] as const
+
+export const SCIENCE_SUBJECTS = ["物理", "化学", "生物"] as const
+
+export function getSubjectCategory(subject: string): 'english' | 'math' | 'science' | null {
   if (subject === '英語') return 'english'
   if ((MATH_SUBJECTS as readonly string[]).includes(subject)) return 'math'
+  if ((SCIENCE_SUBJECTS as readonly string[]).includes(subject)) return 'science'
   return null
 }
 

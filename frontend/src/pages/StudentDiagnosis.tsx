@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { diagnose, fetchRanking, fetchBooks } from '../lib/api'
 import BookCardList from '../components/BookCardList'
 import DiagnosisFeedbackForm from '../components/DiagnosisFeedbackForm'
-import { SUBJECTS, LAYERS, GRADES, ENGLISH_CATEGORIES, MATH_CATEGORIES, MATH_SUBJECTS, getSubjectCategory } from '../lib/constants'
+import { SUBJECTS, LAYERS, GRADES, ENGLISH_CATEGORIES, MATH_CATEGORIES, SCIENCE_CATEGORIES, getSubjectCategory } from '../lib/constants'
 import type { DiagnoseResponse, RankingItem } from '../lib/api'
 
 const SS_KEY = 'student_diagnosis_state'
@@ -39,6 +39,7 @@ export default function StudentDiagnosis() {
     learning_style: '',
     english_weak_areas: [] as string[],
     math_weak_areas: [] as string[],
+    science_weak_areas: [] as string[],
   })
   const [mockScores, setMockScores] = useState<{ exam: string; deviation: string }[]>([{ exam: '', deviation: '' }])
   const [bookHistory, setBookHistory] = useState<{ status: string; bookName: string }[]>([{ status: '完了', bookName: '' }])
@@ -317,7 +318,7 @@ export default function StudentDiagnosis() {
 
           {aiForm.subject === '英語' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">英語の弱点分野（複数選択可）</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">伸ばしたい分野（複数選択可）</label>
               <div className="flex flex-wrap gap-2">
                 {(['文法', '単語', '長文', '解釈', '英作文'] as const).map(area => {
                   const selected = aiForm.english_weak_areas.includes(area)
@@ -347,7 +348,7 @@ export default function StudentDiagnosis() {
 
           {getSubjectCategory(aiForm.subject) === 'math' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">克服したい苦手（複数選択可）</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">伸ばしたい分野（複数選択可）</label>
               <div className="flex flex-wrap gap-2">
                 {MATH_CATEGORIES.map(area => {
                   const selected = aiForm.math_weak_areas.includes(area)
@@ -360,6 +361,36 @@ export default function StudentDiagnosis() {
                         math_weak_areas: selected
                           ? f.math_weak_areas.filter(a => a !== area)
                           : [...f.math_weak_areas, area],
+                      }))}
+                      className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                        selected
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                      }`}
+                    >
+                      {area}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {getSubjectCategory(aiForm.subject) === 'science' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">伸ばしたい分野（複数選択可）</label>
+              <div className="flex flex-wrap gap-2">
+                {SCIENCE_CATEGORIES.map(area => {
+                  const selected = aiForm.science_weak_areas.includes(area)
+                  return (
+                    <button
+                      key={area}
+                      type="button"
+                      onClick={() => setAiForm(f => ({
+                        ...f,
+                        science_weak_areas: selected
+                          ? f.science_weak_areas.filter(a => a !== area)
+                          : [...f.science_weak_areas, area],
                       }))}
                       className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
                         selected
@@ -442,36 +473,25 @@ export default function StudentDiagnosis() {
               ))}
             </div>
           </div>
-          {getSubjectCategory(manualSubject) === 'english' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">伸ばしたい分野（任意）</label>
-              <div className="flex flex-wrap gap-2">
-                {ENGLISH_CATEGORIES.map(c => (
-                  <button key={c} type="button"
-                    onClick={() => setManualCategory(prev => prev === c ? '' : c)}
-                    className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
-                      manualCategory === c ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-                    }`}
-                  >{c}</button>
-                ))}
+          {getSubjectCategory(manualSubject) !== null && (() => {
+            const cat = getSubjectCategory(manualSubject)
+            const categories = cat === 'english' ? ENGLISH_CATEGORIES : cat === 'math' ? MATH_CATEGORIES : SCIENCE_CATEGORIES
+            return (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">伸ばしたい分野（任意）</label>
+                <div className="flex flex-wrap gap-2">
+                  {categories.map(c => (
+                    <button key={c} type="button"
+                      onClick={() => setManualCategory(prev => prev === c ? '' : c)}
+                      className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                        manualCategory === c ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                      }`}
+                    >{c}</button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-          {getSubjectCategory(manualSubject) === 'math' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">克服したい苦手（任意）</label>
-              <div className="flex flex-wrap gap-2">
-                {MATH_CATEGORIES.map(c => (
-                  <button key={c} type="button"
-                    onClick={() => setManualCategory(prev => prev === c ? '' : c)}
-                    className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
-                      manualCategory === c ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-                    }`}
-                  >{c}</button>
-                ))}
-              </div>
-            </div>
-          )}
+            )
+          })()}
         </div>
       )}
 
@@ -537,6 +557,7 @@ export default function StudentDiagnosis() {
                 const cat = getSubjectCategory(manualSubject)
                 if (cat === 'english') return item.english_category === manualCategory
                 if (cat === 'math') return item.math_category === manualCategory
+                if (cat === 'science') return item.science_category === manualCategory
                 return true
               })}
             />

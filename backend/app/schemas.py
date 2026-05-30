@@ -40,6 +40,7 @@ class ReviewCreate(BaseModel):
     self_study_suitability: str = ""
     english_category: str = ""
     math_category: str = ""
+    science_category: str = ""
 
 
 class ReviewUpdate(BaseModel):
@@ -57,6 +58,7 @@ class ReviewUpdate(BaseModel):
     self_study_suitability: str | None = None
     english_category: str | None = None
     math_category: str | None = None
+    science_category: str | None = None
 
 
 class ReviewOut(BaseModel):
@@ -77,6 +79,7 @@ class ReviewOut(BaseModel):
     self_study_suitability: str
     english_category: str
     math_category: str
+    science_category: str
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -127,6 +130,7 @@ class DiagnoseRequest(BaseModel):
     learning_style: str
     english_weak_areas: list[str] = []
     math_weak_areas: list[str] = []
+    science_weak_areas: list[str] = []
 
 
 class RecommendedBook(BaseModel):

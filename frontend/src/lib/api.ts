@@ -49,6 +49,7 @@ export interface RankingItem {
   review_count: number
   english_category: string
   math_category: string
+  science_category: string
 }
 
 export interface DiagnoseRequest {
@@ -61,6 +62,7 @@ export interface DiagnoseRequest {
   learning_style: string
   english_weak_areas: string[]
   math_weak_areas: string[]
+  science_weak_areas: string[]
 }
 
 export interface RecommendedBook {
@@ -110,6 +112,7 @@ export const createReview = (bookId: string, data: {
   self_study_suitability: string
   english_category: string
   math_category: string
+  science_category: string
 }) => apiClient.post<Review[]>(`/api/v1/books/${bookId}/reviews`, data).then(r => r.data)
 
 export const updateReview = (reviewId: string, data: Partial<{

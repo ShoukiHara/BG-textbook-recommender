@@ -64,7 +64,8 @@ def _build_diagnose_prompt(body: DiagnoseRequest, books_section: str) -> str:
 具体的な弱点: {body.weak_points}
 学習スタイルの好み: {body.learning_style}{f"""
 英語の弱点分野: {', '.join(body.english_weak_areas)}""" if body.english_weak_areas else ""}{f"""
-数学の克服したい苦手: {', '.join(body.math_weak_areas)}""" if body.math_weak_areas else ""}
+数学の伸ばしたい分野: {', '.join(body.math_weak_areas)}""" if body.math_weak_areas else ""}{f"""
+理科の伸ばしたい分野: {', '.join(body.science_weak_areas)}""" if body.science_weak_areas else ""}
 
 【参考書リスト（科目: {body.subject}）】
 {books_section}

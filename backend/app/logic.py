@@ -52,7 +52,7 @@ def calculate_ranking(reviews: Sequence[Review], book_map: dict) -> list[dict]:
         key = str(r.instructor_id) if r.instructor_id else "__anon__"
         instructor_review_counts[key] += 1
 
-    book_scores: dict[str, dict] = defaultdict(lambda: {"weighted_sum": 0.0, "weight_sum": 0.0, "count": 0, "rating_sum": 0, "english_categories": [], "math_categories": []})
+    book_scores: dict[str, dict] = defaultdict(lambda: {"weighted_sum": 0.0, "weight_sum": 0.0, "count": 0, "rating_sum": 0, "english_categories": [], "math_categories": [], "science_categories": []})
 
     for r in reviews:
         key = str(r.instructor_id) if r.instructor_id else "__anon__"
@@ -66,6 +66,8 @@ def calculate_ranking(reviews: Sequence[Review], book_map: dict) -> list[dict]:
             book_scores[bid]["english_categories"].append(r.english_category)
         if r.math_category:
             book_scores[bid]["math_categories"].append(r.math_category)
+        if r.science_category:
+            book_scores[bid]["science_categories"].append(r.science_category)
 
     results = []
     for bid, data in book_scores.items():
@@ -78,6 +80,8 @@ def calculate_ranking(reviews: Sequence[Review], book_map: dict) -> list[dict]:
         english_category = max(set(ecats), key=ecats.count) if ecats else ""
         mcats = data["math_categories"]
         math_category = max(set(mcats), key=mcats.count) if mcats else ""
+        scats = data["science_categories"]
+        science_category = max(set(scats), key=scats.count) if scats else ""
         book = book_map.get(bid)
         if book:
             results.append({
@@ -88,6 +92,7 @@ def calculate_ranking(reviews: Sequence[Review], book_map: dict) -> list[dict]:
                 "review_count": data["count"],
                 "english_category": english_category,
                 "math_category": math_category,
+                "science_category": science_category,
             })
 
     results.sort(key=lambda x: x["score"], reverse=True)

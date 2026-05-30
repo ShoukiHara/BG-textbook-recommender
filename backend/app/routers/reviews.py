@@ -37,6 +37,7 @@ async def _get_reviews_with_names(db: AsyncSession, book_id: UUID) -> list[Revie
             self_study_suitability=row.Review.self_study_suitability,
             english_category=row.Review.english_category,
             math_category=row.Review.math_category,
+            science_category=row.Review.science_category,
             created_at=row.Review.created_at,
         )
         for row in rows
@@ -94,6 +95,7 @@ async def list_reviews_filtered(
             self_study_suitability=row.Review.self_study_suitability,
             english_category=row.Review.english_category,
             math_category=row.Review.math_category,
+            science_category=row.Review.science_category,
             created_at=row.Review.created_at,
         )
         for row in rows
