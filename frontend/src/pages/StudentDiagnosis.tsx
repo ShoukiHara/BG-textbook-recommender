@@ -555,9 +555,9 @@ export default function StudentDiagnosis() {
               items={(ranking as RankingItem[]).filter(item => {
                 if (!manualCategory) return true
                 const cat = getSubjectCategory(manualSubject)
-                if (cat === 'english') return item.english_category === manualCategory
-                if (cat === 'math') return item.math_category === manualCategory
-                if (cat === 'science') return item.science_category === manualCategory
+                if (cat === 'english') return item.english_category.split(',').map(s => s.trim()).includes(manualCategory)
+                if (cat === 'math') return item.math_category.split(',').map(s => s.trim()).includes(manualCategory)
+                if (cat === 'science') return item.science_category.split(',').map(s => s.trim()).includes(manualCategory)
                 return true
               })}
             />

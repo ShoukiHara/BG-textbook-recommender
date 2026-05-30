@@ -40,8 +40,8 @@ def compute_review_summary(reviews: Sequence[Review]) -> dict:
 
     # カテゴリ集計（最頻値）
     def most_common(vals: list[str]) -> str:
-        filtered = [v for v in vals if v]
-        return max(set(filtered), key=filtered.count) if filtered else ""
+        expanded = [c.strip() for v in vals for c in v.split(',') if c.strip()]
+        return max(set(expanded), key=expanded.count) if expanded else ""
 
     english_category = most_common([r.english_category for r in reviews])
     math_category = most_common([r.math_category for r in reviews])
@@ -74,12 +74,12 @@ def calculate_ranking(reviews: Sequence[Review], book_map: dict) -> list[dict]:
         book_scores[bid]["weight_sum"] += weight
         book_scores[bid]["count"] += 1
         book_scores[bid]["rating_sum"] += r.rating
-        if r.english_category:
-            book_scores[bid]["english_categories"].append(r.english_category)
-        if r.math_category:
-            book_scores[bid]["math_categories"].append(r.math_category)
-        if r.science_category:
-            book_scores[bid]["science_categories"].append(r.science_category)
+        for cat in r.english_category.split(',') if r.english_category else []:
+            book_scores[bid]["english_categories"].append(cat.strip())
+        for cat in r.math_category.split(',') if r.math_category else []:
+            book_scores[bid]["math_categories"].append(cat.strip())
+        for cat in r.science_category.split(',') if r.science_category else []:
+            book_scores[bid]["science_categories"].append(cat.strip())
 
     results = []
     for bid, data in book_scores.items():

@@ -58,9 +58,21 @@ export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
   })
   const [selfStudy, setSelfStudy] = useState('')
   const [strengthens, setStrengthens] = useState('')
-  const [englishCategory, setEnglishCategory] = useState('')
-  const [mathCategory, setMathCategory] = useState('')
-  const [scienceCategory, setScienceCategory] = useState('')
+  const [englishCategories, setEnglishCategories] = useState<string[]>([])
+  const [mathCategories, setMathCategories] = useState<string[]>([])
+  const [scienceCategories, setScienceCategories] = useState<string[]>([])
+
+  const toggleCategory = (
+    list: string[],
+    setList: (v: string[]) => void,
+    value: string,
+  ) => {
+    if (list.includes(value)) {
+      setList(list.filter(v => v !== value))
+    } else if (list.length < 2) {
+      setList([...list, value])
+    }
+  }
 
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -99,9 +111,9 @@ export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
         completion_period: selectFields.completion_period,
         strengthens_weaknesses: strengthens,
         self_study_suitability: selfStudy,
-        english_category: englishCategory,
-        math_category: mathCategory,
-        science_category: scienceCategory,
+        english_category: englishCategories.join(','),
+        math_category: mathCategories.join(','),
+        science_category: scienceCategories.join(','),
       })
       setSuccess(true)
       setLayerRatings({})
@@ -109,9 +121,9 @@ export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
       setSelectFields({ explanation_quality: '', problem_volume: '', target_deviation: '', completion_period: '' })
       setSelfStudy('')
       setStrengthens('')
-      setEnglishCategory('')
-      setMathCategory('')
-      setScienceCategory('')
+      setEnglishCategories([])
+      setMathCategories([])
+      setScienceCategories([])
     } catch {
       setError('投稿に失敗しました。再度お試しください。')
     } finally {
@@ -181,21 +193,17 @@ export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
       {/* 英語カテゴリ（英語のみ） */}
       {subject === '英語' && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">伸ばせる分野</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">伸ばせる分野<span className="text-xs text-gray-400 ml-1">（2つまで）</span></label>
           <div className="flex flex-wrap gap-2">
             {ENGLISH_CATEGORIES.map(c => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setEnglishCategory(prev => prev === c ? '' : c)}
+              <button key={c} type="button"
+                onClick={() => toggleCategory(englishCategories, setEnglishCategories, c)}
                 className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
-                  englishCategory === c
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                  englishCategories.includes(c) ? 'bg-blue-600 text-white border-blue-600'
+                  : englishCategories.length >= 2 ? 'bg-white text-gray-300 border-gray-200 cursor-not-allowed'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
                 }`}
-              >
-                {c}
-              </button>
+              >{c}</button>
             ))}
           </div>
         </div>
@@ -204,21 +212,17 @@ export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
       {/* 数学カテゴリ（数学のみ） */}
       {subject && (MATH_SUBJECTS as readonly string[]).includes(subject) && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">伸ばせる分野</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">伸ばせる分野<span className="text-xs text-gray-400 ml-1">（2つまで）</span></label>
           <div className="flex flex-wrap gap-2">
             {MATH_CATEGORIES.map(c => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setMathCategory(prev => prev === c ? '' : c)}
+              <button key={c} type="button"
+                onClick={() => toggleCategory(mathCategories, setMathCategories, c)}
                 className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
-                  mathCategory === c
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                  mathCategories.includes(c) ? 'bg-blue-600 text-white border-blue-600'
+                  : mathCategories.length >= 2 ? 'bg-white text-gray-300 border-gray-200 cursor-not-allowed'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
                 }`}
-              >
-                {c}
-              </button>
+              >{c}</button>
             ))}
           </div>
         </div>
@@ -227,21 +231,17 @@ export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
       {/* 理科カテゴリ（理科のみ） */}
       {subject && (SCIENCE_SUBJECTS as readonly string[]).includes(subject) && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">伸ばせる分野</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">伸ばせる分野<span className="text-xs text-gray-400 ml-1">（2つまで）</span></label>
           <div className="flex flex-wrap gap-2">
             {SCIENCE_CATEGORIES.map(c => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setScienceCategory(prev => prev === c ? '' : c)}
+              <button key={c} type="button"
+                onClick={() => toggleCategory(scienceCategories, setScienceCategories, c)}
                 className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
-                  scienceCategory === c
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                  scienceCategories.includes(c) ? 'bg-blue-600 text-white border-blue-600'
+                  : scienceCategories.length >= 2 ? 'bg-white text-gray-300 border-gray-200 cursor-not-allowed'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
                 }`}
-              >
-                {c}
-              </button>
+              >{c}</button>
             ))}
           </div>
         </div>
