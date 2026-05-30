@@ -39,6 +39,32 @@ export default function StudentDiagnosis() {
     learning_style: '',
     english_weak_areas: [] as string[],
   })
+  const [mockScores, setMockScores] = useState<{ exam: string; deviation: string }[]>([{ exam: '', deviation: '' }])
+
+  const updateMockScore = (i: number, key: 'exam' | 'deviation', value: string) => {
+    setMockScores(prev => {
+      const next = prev.map((ms, idx) => idx === i ? { ...ms, [key]: value } : ms)
+      const scoreText = next.filter(ms => ms.exam || ms.deviation)
+        .map(ms => [ms.exam, ms.deviation ? `偏差値${ms.deviation}` : ''].filter(Boolean).join(' '))
+        .join(' / ')
+      setAiForm(f => ({ ...f, mock_score: scoreText }))
+      return next
+    })
+  }
+
+  const addMockScore = () => setMockScores(prev => [...prev, { exam: '', deviation: '' }])
+
+  const removeMockScore = (i: number) => {
+    setMockScores(prev => {
+      const next = prev.filter((_, idx) => idx !== i)
+      const scoreText = next.filter(ms => ms.exam || ms.deviation)
+        .map(ms => [ms.exam, ms.deviation ? `偏差値${ms.deviation}` : ''].filter(Boolean).join(' '))
+        .join(' / ')
+      setAiForm(f => ({ ...f, mock_score: scoreText }))
+      return next
+    })
+  }
+
   const [diagnosing, setDiagnosing] = useState(false)
   const [diagResult, setDiagResult] = useState<DiagnoseResponse | null>(saved?.diagResult ?? null)
   const [diagError, setDiagError] = useState<string | null>(null)
@@ -155,36 +181,46 @@ export default function StudentDiagnosis() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">現在の模試成績</label>
-            <div className="flex gap-2">
-              <select
-                value={aiForm.mock_score.split(' ')[0] ?? ''}
-                onChange={e => {
-                  const deviation = aiForm.mock_score.split(' ')[1] ?? ''
-                  setAiForm(f => ({ ...f, mock_score: e.target.value ? `${e.target.value} ${deviation}`.trim() : '' }))
-                }}
-                className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
-              >
-                <option value="">模試を選択</option>
-                {['駿台全国模試', '河合全統模試', '進研模試', '東進共通テスト本番レベル模試'].map(m => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
-              <div className="flex items-center gap-1">
-                <span className="text-sm text-gray-500 whitespace-nowrap">偏差値</span>
-                <input
-                  type="number"
-                  min={20}
-                  max={100}
-                  value={aiForm.mock_score.split(' ')[1] ?? ''}
-                  onChange={e => {
-                    const exam = aiForm.mock_score.split(' ')[0] ?? ''
-                    setAiForm(f => ({ ...f, mock_score: exam ? `${exam} ${e.target.value}`.trim() : e.target.value }))
-                  }}
-                  placeholder="65"
-                  className="w-20 border border-gray-300 rounded-md px-3 py-2 text-sm"
-                />
-              </div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">現在の模試成績</label>
+            <div className="space-y-2">
+              {mockScores.map((ms, i) => (
+                <div key={i} className="flex gap-2 items-center">
+                  <select
+                    value={ms.exam}
+                    onChange={e => updateMockScore(i, 'exam', e.target.value)}
+                    className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  >
+                    <option value="">模試を選択</option>
+                    {['駿台全国模試', '河合全統模試', '進研模試', '東進共通テスト本番レベル模試'].map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm text-gray-500 whitespace-nowrap">偏差値</span>
+                    <input
+                      type="number"
+                      min={20}
+                      max={100}
+                      value={ms.deviation}
+                      onChange={e => updateMockScore(i, 'deviation', e.target.value)}
+                      placeholder="65"
+                      className="w-20 border border-gray-300 rounded-md px-3 py-2 text-sm"
+                    />
+                  </div>
+                  {mockScores.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeMockScore(i)}
+                      className="text-gray-400 hover:text-red-500 text-lg leading-none"
+                    >×</button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addMockScore}
+                className="text-sm text-blue-600 hover:text-blue-700"
+              >＋ 模試を追加</button>
             </div>
           </div>
 
