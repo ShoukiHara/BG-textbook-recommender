@@ -37,6 +37,7 @@ export default function StudentDiagnosis() {
     books_history: '',
     weak_points: '',
     learning_style: '',
+    english_weak_areas: [] as string[],
   })
   const [diagnosing, setDiagnosing] = useState(false)
   const [diagResult, setDiagResult] = useState<DiagnoseResponse | null>(saved?.diagResult ?? null)
@@ -181,6 +182,36 @@ export default function StudentDiagnosis() {
               className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
             />
           </div>
+
+          {aiForm.subject === '英語' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">英語の弱点分野（複数選択可）</label>
+              <div className="flex flex-wrap gap-2">
+                {(['文法', '単語', '長文', '解釈', '英作文'] as const).map(area => {
+                  const selected = aiForm.english_weak_areas.includes(area)
+                  return (
+                    <button
+                      key={area}
+                      type="button"
+                      onClick={() => setAiForm(f => ({
+                        ...f,
+                        english_weak_areas: selected
+                          ? f.english_weak_areas.filter(a => a !== area)
+                          : [...f.english_weak_areas, area],
+                      }))}
+                      className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                        selected
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                      }`}
+                    >
+                      {area}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">学習スタイルの好み</label>

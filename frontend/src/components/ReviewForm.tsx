@@ -3,8 +3,11 @@ import StarRating from './StarRating'
 import { LAYERS } from '../lib/constants'
 import type { Instructor } from '../lib/api'
 
+const ENGLISH_CATEGORIES = ['文法', '単語', '長文', '解釈', '英作文'] as const
+
 interface Props {
   bookId: string
+  subject?: string
   instructors: Instructor[]
   onSubmit: (data: {
     instructor_id: string
@@ -19,6 +22,7 @@ interface Props {
     target_deviation: string
     completion_period: string
     self_study_suitability: string
+    english_category: string
   }) => Promise<void>
 }
 
@@ -40,7 +44,7 @@ const SELECT_FIELDS: SelectField[] = [
   { key: 'completion_period',      label: '完了にかかる標準期間', options: ['2週間', '1ヶ月', '2〜3ヶ月', '3ヶ月以上'] },
 ]
 
-export default function ReviewForm({ instructors, onSubmit }: Props) {
+export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
   const [instructorId, setInstructorId] = useState('')
 
   // layer -> rating (layerが選択されていない場合はキーが存在しない)
@@ -54,6 +58,7 @@ export default function ReviewForm({ instructors, onSubmit }: Props) {
   })
   const [selfStudy, setSelfStudy] = useState('')
   const [strengthens, setStrengthens] = useState('')
+  const [englishCategory, setEnglishCategory] = useState('')
 
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -92,6 +97,7 @@ export default function ReviewForm({ instructors, onSubmit }: Props) {
         completion_period: selectFields.completion_period,
         strengthens_weaknesses: strengthens,
         self_study_suitability: selfStudy,
+        english_category: englishCategory,
       })
       setSuccess(true)
       setLayerRatings({})
@@ -99,6 +105,7 @@ export default function ReviewForm({ instructors, onSubmit }: Props) {
       setSelectFields({ explanation_quality: '', problem_volume: '', target_deviation: '', completion_period: '' })
       setSelfStudy('')
       setStrengthens('')
+      setEnglishCategory('')
     } catch {
       setError('投稿に失敗しました。再度お試しください。')
     } finally {
@@ -164,6 +171,29 @@ export default function ReviewForm({ instructors, onSubmit }: Props) {
           })}
         </div>
       </div>
+
+      {/* 英語カテゴリ（英語のみ） */}
+      {subject === '英語' && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">英語カテゴリ</label>
+          <div className="flex flex-wrap gap-2">
+            {ENGLISH_CATEGORIES.map(c => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setEnglishCategory(prev => prev === c ? '' : c)}
+                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                  englishCategory === c
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 参考書の特徴（選択式） */}
       <div>

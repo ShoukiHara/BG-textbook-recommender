@@ -125,6 +125,7 @@ export default function InstructorInput() {
           {selectedBookId && (
             <ReviewForm
               bookId={selectedBookId}
+              subject={allBooks.find(b => b.id === selectedBookId)?.subject}
               instructors={instructors}
               onSubmit={data => createReview(selectedBookId, data).then(() => {})}
             />

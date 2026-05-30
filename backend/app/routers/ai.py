@@ -62,7 +62,8 @@ def _build_diagnose_prompt(body: DiagnoseRequest, books_section: str) -> str:
 現在の模試成績: {body.mock_score}
 これまで使用・現在使用中の参考書: {body.books_history}
 具体的な弱点: {body.weak_points}
-学習スタイルの好み: {body.learning_style}
+学習スタイルの好み: {body.learning_style}{f"""
+英語の弱点分野: {', '.join(body.english_weak_areas)}""" if body.english_weak_areas else ""}
 
 【参考書リスト（科目: {body.subject}）】
 {books_section}

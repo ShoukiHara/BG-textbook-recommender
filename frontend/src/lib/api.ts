@@ -56,6 +56,7 @@ export interface DiagnoseRequest {
   books_history: string
   weak_points: string
   learning_style: string
+  english_weak_areas: string[]
 }
 
 export interface RecommendedBook {
@@ -97,6 +98,7 @@ export const createReview = (bookId: string, data: {
   target_deviation: string
   completion_period: string
   self_study_suitability: string
+  english_category: string
 }) => apiClient.post<Review[]>(`/api/v1/books/${bookId}/reviews`, data).then(r => r.data)
 
 export const updateReview = (reviewId: string, data: Partial<{

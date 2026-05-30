@@ -38,6 +38,7 @@ class ReviewCreate(BaseModel):
     target_deviation: str = ""
     completion_period: str = ""
     self_study_suitability: str = ""
+    english_category: str = ""
 
 
 class ReviewUpdate(BaseModel):
@@ -53,6 +54,7 @@ class ReviewUpdate(BaseModel):
     target_deviation: str | None = None
     completion_period: str | None = None
     self_study_suitability: str | None = None
+    english_category: str | None = None
 
 
 class ReviewOut(BaseModel):
@@ -70,6 +72,7 @@ class ReviewOut(BaseModel):
     target_deviation: str
     completion_period: str
     self_study_suitability: str
+    english_category: str
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -117,6 +120,7 @@ class DiagnoseRequest(BaseModel):
     books_history: str
     weak_points: str
     learning_style: str
+    english_weak_areas: list[str] = []
 
 
 class RecommendedBook(BaseModel):

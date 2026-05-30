@@ -16,7 +16,9 @@
       "Bash(gh --version)",
       "Bash(winget install *)",
       "Bash(python -c ' *)",
-      "Bash(backend.venvScriptspython.exe -c ' *)"
+      "Bash(backend.venvScriptspython.exe -c ' *)",
+      "Read(//mnt/c/**)",
+      "Bash(backend/.venv/Scripts/python.exe -c ' *)"
     ]
   }
 }
