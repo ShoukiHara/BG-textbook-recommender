@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchBooks, fetchInstructors, createReview, createBook } from '../lib/api'
 import ReviewForm from '../components/ReviewForm'
 import { SUBJECTS, SUBJECTS_WITH_COMMON } from '../lib/constants'
@@ -8,6 +8,7 @@ import { SUBJECTS, SUBJECTS_WITH_COMMON } from '../lib/constants'
 type Tab = 'review' | 'register'
 
 export default function InstructorInput() {
+  const qc = useQueryClient()
   const [searchParams] = useSearchParams()
   const presetBookId = searchParams.get('bookId')
 
@@ -66,6 +67,7 @@ export default function InstructorInput() {
       const created = await createBook({ title: regTitle.trim(), subject: regSubject })
       setRegSuccess(`「${created.map(b => b.title + '（' + b.subject + '）').join('、')}」を登録しました`)
       setRegTitle('')
+      qc.invalidateQueries({ queryKey: ['books'] })
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status
       setRegError(status === 409 ? 'すでに登録済みの参考書です' : '登録に失敗しました')
