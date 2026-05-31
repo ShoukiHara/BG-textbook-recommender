@@ -127,7 +127,7 @@ export default function BookDetail() {
                     const chips = [
                       rep.explanation_quality && `解説: ${rep.explanation_quality}`,
                       rep.problem_volume && `問題量: ${rep.problem_volume}`,
-                      rep.target_deviation && `偏差値: ${rep.target_deviation}`,
+                      rep.target_deviation && `偏差値: ${rep.target_deviation.split(',').join(' / ')}`,
                       rep.completion_period && rep.completion_period,
                       rep.self_study_suitability && rep.self_study_suitability,
                     ].filter(Boolean)

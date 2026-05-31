@@ -37,9 +37,10 @@ const EMPTY_EDIT_FIELDS: EditFields = {
 const SELECT_OPTIONS = [
   { key: 'explanation_quality', label: '解説の充実度', options: ['丁寧', '標準', 'シンプル'] },
   { key: 'problem_volume',      label: '問題量',       options: ['多い', '標準', '少ない'] },
-  { key: 'target_deviation',    label: '対象偏差値帯（駿台模試準拠）', options: ['〜50', '50〜60', '60〜65', '65〜70', '70〜'] },
   { key: 'completion_period',   label: '完了期間',     options: ['2週間', '1ヶ月', '2〜3ヶ月', '3ヶ月以上'] },
 ] as const
+
+const DEVIATION_OPTIONS = ['〜50', '50〜60', '60〜65', '65〜70', '70〜'] as const
 
 const TEXT_FIELDS = [
   { key: 'period',            label: '① 使用時期・期間' },
@@ -180,6 +181,32 @@ function ReviewEditForm({
       </div>
 
       <div>
+        <label className="block text-xs text-gray-500 mb-1">
+          対象偏差値帯（駿台模試準拠）<span className="text-xs text-gray-400 ml-1">（2つまで）</span>
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {DEVIATION_OPTIONS.map(v => {
+            const current = fields.target_deviation ? fields.target_deviation.split(',') : []
+            return (
+              <button key={v} type="button"
+                onClick={() => {
+                  const next = current.includes(v)
+                    ? current.filter(x => x !== v)
+                    : current.length < 2 ? [...current, v] : current
+                  onFieldChange('target_deviation', next.join(','))
+                }}
+                className={`px-3 py-1 rounded-full text-xs border transition-colors ${
+                  current.includes(v) ? 'bg-blue-600 text-white border-blue-600'
+                  : current.length >= 2 ? 'bg-white text-gray-300 border-gray-200 cursor-not-allowed'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                }`}
+              >{v}</button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div>
         <label className="block text-xs text-gray-500 mb-1">独学適性</label>
         <div className="flex gap-4">
           {['独学向き', '授業との併用推奨'].map(v => (
@@ -276,7 +303,7 @@ function ReviewGroupCard({ group, onEdit, onDeleteLayer }: {
   const chips = [
     rep.explanation_quality && `解説: ${rep.explanation_quality}`,
     rep.problem_volume && `問題量: ${rep.problem_volume}`,
-    rep.target_deviation && `偏差値: ${rep.target_deviation}`,
+    rep.target_deviation && `偏差値: ${rep.target_deviation.split(',').join(' / ')}`,
     rep.completion_period && rep.completion_period,
     rep.self_study_suitability && rep.self_study_suitability,
   ].filter(Boolean)

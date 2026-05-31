@@ -38,11 +38,12 @@ type TextKey = typeof TEXT_FIELDS[number]['key']
 type SelectField = { key: string; label: string; options: string[] }
 
 const SELECT_FIELDS: SelectField[] = [
-  { key: 'explanation_quality',    label: '解説の充実度',      options: ['丁寧', '標準', 'シンプル'] },
-  { key: 'problem_volume',         label: '問題量',            options: ['多い', '標準', '少ない'] },
-  { key: 'target_deviation',       label: '対象偏差値帯',      options: ['〜50', '50〜60', '60〜65', '65〜70', '70〜'] },
+  { key: 'explanation_quality',    label: '解説の充実度',        options: ['丁寧', '標準', 'シンプル'] },
+  { key: 'problem_volume',         label: '問題量',              options: ['多い', '標準', '少ない'] },
   { key: 'completion_period',      label: '完了にかかる標準期間', options: ['2週間', '1ヶ月', '2〜3ヶ月', '3ヶ月以上'] },
 ]
+
+const DEVIATION_OPTIONS = ['〜50', '50〜60', '60〜65', '65〜70', '70〜'] as const
 
 export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
   const [instructorId, setInstructorId] = useState('')
@@ -54,8 +55,9 @@ export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
     period: '', before_connection: '', after_connection: '', usage_feel: '',
   })
   const [selectFields, setSelectFields] = useState<Record<string, string>>({
-    explanation_quality: '', problem_volume: '', target_deviation: '', completion_period: '',
+    explanation_quality: '', problem_volume: '', completion_period: '',
   })
+  const [targetDeviations, setTargetDeviations] = useState<string[]>([])
   const [selfStudy, setSelfStudy] = useState('')
   const [strengthens, setStrengthens] = useState('')
   const [englishCategories, setEnglishCategories] = useState<string[]>([])
@@ -107,7 +109,7 @@ export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
         usage_feel: textFields.usage_feel,
         explanation_quality: selectFields.explanation_quality,
         problem_volume: selectFields.problem_volume,
-        target_deviation: selectFields.target_deviation,
+        target_deviation: targetDeviations.join(','),
         completion_period: selectFields.completion_period,
         strengthens_weaknesses: strengthens,
         self_study_suitability: selfStudy,
@@ -118,7 +120,8 @@ export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
       setSuccess(true)
       setLayerRatings({})
       setTextFields({ period: '', before_connection: '', after_connection: '', usage_feel: '' })
-      setSelectFields({ explanation_quality: '', problem_volume: '', target_deviation: '', completion_period: '' })
+      setSelectFields({ explanation_quality: '', problem_volume: '', completion_period: '' })
+      setTargetDeviations([])
       setSelfStudy('')
       setStrengthens('')
       setEnglishCategories([])
@@ -250,7 +253,7 @@ export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
       {/* 参考書の特徴（選択式） */}
       <div>
         <p className="text-sm font-medium text-gray-700 mb-2">参考書の特徴</p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 mb-3">
           {SELECT_FIELDS.map(({ key, label, options }) => (
             <div key={key}>
               <label className="block text-xs text-gray-500 mb-1">{label}</label>
@@ -264,6 +267,24 @@ export default function ReviewForm({ instructors, subject, onSubmit }: Props) {
               </select>
             </div>
           ))}
+        </div>
+
+        <div className="mb-3">
+          <label className="block text-xs text-gray-500 mb-1">
+            対象偏差値帯（駿台模試準拠）<span className="text-xs text-gray-400 ml-1">（2つまで）</span>
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {DEVIATION_OPTIONS.map(v => (
+              <button key={v} type="button"
+                onClick={() => toggleCategory(targetDeviations, setTargetDeviations, v)}
+                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                  targetDeviations.includes(v) ? 'bg-blue-600 text-white border-blue-600'
+                  : targetDeviations.length >= 2 ? 'bg-white text-gray-300 border-gray-200 cursor-not-allowed'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                }`}
+              >{v}</button>
+            ))}
+          </div>
         </div>
 
         <div className="mt-3">
