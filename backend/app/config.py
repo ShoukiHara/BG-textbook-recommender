@@ -11,6 +11,11 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 480
     admin_password_hash: str = ""
     cors_origins: str = "http://localhost:5173"
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    notification_email: str = "sykhr10701@gmail.com"
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

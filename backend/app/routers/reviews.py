@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, literal
 from app.database import get_db
@@ -7,6 +7,7 @@ from app.models import Book, Review, Instructor
 from app.schemas import ReviewCreate, AdminReviewCreate, ReviewUpdate, ReviewOut
 from app.routers.auth import require_admin
 from app.logic import compute_review_summary
+from app.email_notify import send_review_notification
 
 router = APIRouter(tags=["reviews"])
 
@@ -111,11 +112,12 @@ async def list_reviews_filtered(
 
 
 @router.post("/books/{book_id}/reviews", response_model=list[ReviewOut], status_code=201)
-async def create_review(book_id: UUID, body: ReviewCreate, db: AsyncSession = Depends(get_db)):
+async def create_review(book_id: UUID, body: ReviewCreate, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)):
     book = await db.get(Book, book_id)
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
-    if not await db.get(Instructor, body.instructor_id):
+    instructor = await db.get(Instructor, body.instructor_id)
+    if not instructor:
         raise HTTPException(status_code=404, detail="Instructor not found")
     if not body.layer_ratings:
         raise HTTPException(status_code=422, detail="layer_ratings must not be empty")
@@ -129,6 +131,14 @@ async def create_review(book_id: UUID, body: ReviewCreate, db: AsyncSession = De
 
     await _invalidate_book_caches(db, book)
     await db.commit()
+
+    background_tasks.add_task(
+        send_review_notification,
+        book.title,
+        book.subject,
+        instructor.name,
+        [{"layer": lr.layer, "rating": lr.rating} for lr in body.layer_ratings],
+    )
 
     all_reviews = await _get_reviews_with_names(db, book_id)
     return [r for r in all_reviews if r.id in created_ids]
