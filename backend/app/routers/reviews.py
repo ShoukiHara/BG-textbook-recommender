@@ -122,6 +122,12 @@ async def create_review(book_id: UUID, body: ReviewCreate, background_tasks: Bac
     if not body.layer_ratings:
         raise HTTPException(status_code=422, detail="layer_ratings must not be empty")
 
+    # commit前に取り出しておく（commit後はexpireされアクセス不可になる場合がある）
+    book_title = book.title
+    book_subject = book.subject
+    instructor_name = instructor.name
+    layer_ratings_snapshot = [{"layer": lr.layer, "rating": lr.rating} for lr in body.layer_ratings]
+
     shared = body.model_dump(exclude={"layer_ratings"})
     created_ids = []
     for lr in body.layer_ratings:
@@ -134,10 +140,10 @@ async def create_review(book_id: UUID, body: ReviewCreate, background_tasks: Bac
 
     background_tasks.add_task(
         send_review_notification,
-        book.title,
-        book.subject,
-        instructor.name,
-        [{"layer": lr.layer, "rating": lr.rating} for lr in body.layer_ratings],
+        book_title,
+        book_subject,
+        instructor_name,
+        layer_ratings_snapshot,
     )
 
     all_reviews = await _get_reviews_with_names(db, book_id)
