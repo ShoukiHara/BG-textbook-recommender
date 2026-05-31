@@ -131,7 +131,7 @@ async def create_review(book_id: UUID, body: ReviewCreate, background_tasks: Bac
     shared = body.model_dump(exclude={"layer_ratings"})
     created_ids = []
     for lr in body.layer_ratings:
-        review = Review(layer=lr.layer, rating=lr.rating, **shared)
+        review = Review(book_id=book_id, layer=lr.layer, rating=lr.rating, **shared)
         db.add(review)
         created_ids.append(review.id)
 
