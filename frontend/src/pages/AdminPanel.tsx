@@ -300,6 +300,12 @@ function ReviewGroupCard({ group, onEdit, onDeleteLayer }: {
   onDeleteLayer: (reviewId: string) => void
 }) {
   const rep = group.reviews[0]
+  const categoryChips = [
+    ...(rep.english_category ? rep.english_category.split(',') : []),
+    ...(rep.math_category ? rep.math_category.split(',') : []),
+    ...(rep.science_category ? rep.science_category.split(',') : []),
+  ]
+
   const chips = [
     rep.explanation_quality && `解説: ${rep.explanation_quality}`,
     rep.problem_volume && `問題量: ${rep.problem_volume}`,
@@ -339,6 +345,15 @@ function ReviewGroupCard({ group, onEdit, onDeleteLayer }: {
         <div className="flex flex-wrap gap-1 mb-2">
           {chips.map(chip => (
             <span key={chip} className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">{chip}</span>
+          ))}
+        </div>
+      )}
+
+      {categoryChips.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-2">
+          <span className="text-xs text-gray-400 mr-1">伸ばせる分野:</span>
+          {categoryChips.map(c => (
+            <span key={c} className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded border border-green-200">{c}</span>
           ))}
         </div>
       )}
